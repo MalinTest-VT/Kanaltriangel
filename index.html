@@ -222,6 +222,15 @@ const DEFAULT_LABELS = {
   left:  { title: 'Aktiveringslogik',  subtitle: 'När & hur triggas kanalen?' },
   right: { title: 'Omfattning',  subtitle: 'Detaljnivå & förväntat innehåll' }
 };
+  
+const DEFAULT_WORDS = [
+  "Kort och koncist",
+  "Fördjupning",
+  "Pressmeddelande",
+  "Personaliserad",
+  "Till ALLA resenärer"
+];
+
 
 // Autospar
 let AUTOSAVE_SEC = 3;        // standard 3s (kan ändras 2–25 via reglage)
@@ -279,6 +288,9 @@ function createTriangle(labels = DEFAULT_LABELS) {
     </div>
 
     <div class="bank" aria-label="Ordbank"></div>
+// Lägg till standardord
+DEFAULT_WORDS.forEach(w => addWord(wrapper, w));
+
 
     <div class="triangle-wrap">
       <div class="triangle" role="group" aria-label="Triangel med tre zoner">
@@ -328,6 +340,9 @@ function createTriangle(labels = DEFAULT_LABELS) {
     if (!list) return;
     list.split(/\r?\n/).map(s => s.trim()).filter(Boolean).forEach(w => addWord(wrapper, w));
   });
+
+// Lägg till standardord i banken
+DEFAULT_WORDS.forEach(w => addWord(wrapper, w));
 
   // Dra & släpp
   setupDragAndDrop(wrapper);
@@ -520,6 +535,7 @@ function restoreAll() {
 
 </body>
 </html>
+
 
 
 
