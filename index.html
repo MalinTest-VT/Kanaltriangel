@@ -3,7 +3,7 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8" />
-<title>Dynamiska Trianglar – rektangulära zoner, autospar & diskret triangel</title>
+<title>Kanaltriangel</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   :root{
@@ -216,7 +216,7 @@
 const DEFAULT_LABELS = {
   top:   { title: 'Kanalens roll',    subtitle: 'Syfte & placeringsprincip' },
   left:  { title: 'Aktiveringslogik',  subtitle: 'När & hur triggas kanalen?' },
-  right: { title: 'Informationsdjup',  subtitle: 'Detaljnivå & förväntat innehåll' }
+  right: { title: 'Omfattning',  subtitle: 'Detaljnivå & förväntat innehåll' }
 };
 
 // Autospar
@@ -296,8 +296,8 @@ function createTriangle(labels = DEFAULT_LABELS) {
 
         <!-- RIGHT -->
         <div class="zone-box zone-right">
-          <span class="zone-label" contenteditable="true">${labels.right.title}</span>
-          <div class="zone-sub" contenteditable="true">${labels.right.subtitle}</div>
+          <span class="zone-label">${labels.top.title}</span>
+          <div class="zone-sub">${labels.top.subtitle}</div>
           <div class="zone" data-key="right" data-zone="${labels.right.title}" aria-label="${labels.right.title}"></div>
         </div>
       </div>
@@ -514,6 +514,7 @@ function restoreAll() {
 
 </body>
 </html>
+
 
 
 
