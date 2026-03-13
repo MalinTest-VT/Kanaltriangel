@@ -88,8 +88,8 @@
     transform: scale(var(--tri-scale));
     transform-origin: top center;
     margin-top: calc((var(--tri-scale) - 1) * 8px);
-    clip-path: polygon(50% 0%, 100% 100%, 0% 100%); /* klipp allt inom triangel */
-    overflow:hidden;
+   
+    overflow:visible;
   }
   .tri-bg {
     position:absolute;
@@ -513,5 +513,6 @@ function restoreAll() {
 
 </body>
 </html>
+
 
 
