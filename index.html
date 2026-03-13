@@ -117,15 +117,20 @@
   .zone-right{ top: var(--bottom-y); left: calc(50% + var(--spread-x)); transform: translate(-50%, 0); width: var(--bottom-w); height: var(--bottom-h); }
 
   /* Rubrik / underrubrik */
-  .zone-label,
-  .zone-sub{
+
+.zone-label,
+.zone-sub{
     display:inline-block;
+    max-width: fit-content;
+    position: relative;
+    z-index: 5;
     background: var(--label-bg);
     border:1px solid #e2e8f0;
     color:#0f172a;
     border-radius:8px;
     padding:4px 8px;
-  }
+}
+
   .zone-label{ font-size: var(--label-font); font-weight:700; }
   .zone-sub{ font-size: var(--sublabel-font); font-weight:500; color:#334155; min-height: 22px; }
   .zone-sub[contenteditable]:empty:before{ content:"Skriv underrubrik…"; color:#94a3b8; }
@@ -508,4 +513,5 @@ function restoreAll() {
 
 </body>
 </html>
+
 
