@@ -22,13 +22,13 @@
 
     /* Zoners storlek/placering (kan finjusteras) */
     --top-w: 64%;                /* top-zonens bredd */
-    --top-h: 25%;                /* top-zonens höjd */
+    --top-h: 28%;                /* top-zonens höjd */
     --top-y: 8%;                /* avstånd från triangelns topp till top-zonen */
 
-    --bottom-w: 40%;             /* bredd för vänster/höger zon */
+  --bottom-w: calc(50% - 6%);    /* säker bredd, max ~44% */  /* bredd för vänster/höger zon */
     --bottom-h: 36%;             /* höjd för vänster/höger zon */
-    --bottom-y: 56%;             /* top-position (från triangelns topp) för bottenzonerna */
-    --spread-x: 18%;             /* horisontell spridning från mitten */
+   --bottom-y: calc(var(--top-y) + var(--top-h) + 6%);            /* top-position (från triangelns topp) för bottenzonerna */
+   --spread-x: calc((50% - var(--bottom-w)) - 4%)            /* horisontell spridning från mitten */
 
     /* Zonernas färger (du kan styra allt här) */
     --zone-top-bg:  #F3FCFF;
@@ -80,25 +80,31 @@
   }
 
   /* Triangel-ytan: diskret bakgrund (stil C) */
-  .triangle-wrap { width:100%; overflow:visible; }
-  .triangle {
+  .triangle-wrap { width:100%; overflow:visible; }  
+.triangle {
     position:relative;
     width:100%;
-    aspect-ratio: 1 / 0.86;      /* liksidig triangel-proportion */
+    aspect-ratio: 1 / 0.86;
     transform: scale(var(--tri-scale));
     transform-origin: top center;
     margin-top: calc((var(--tri-scale) - 1) * 8px);
-    overflow:visible;
-  }
-  .tri-bg {
+
+    /* Nytt: hindrar att skalningen gör kolliderande boxar */
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+}
+
+  
+.tri-bg {
     position:absolute;
     inset:0;
     clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
     background: linear-gradient(180deg, #f9fbff 0%, #f3f7ff 100%);
-    /* diskret skugga */
     filter: drop-shadow(0 8px 14px rgba(0,0,0,0.08));
     z-index: 1;
-  }
+}
+  
 
   /* Zone-boxar (rektangulära) med rubrik + underrubrik + ordlåda */
   .zone-box {
@@ -514,6 +520,7 @@ function restoreAll() {
 
 </body>
 </html>
+
 
 
 
