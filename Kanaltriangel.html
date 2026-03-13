@@ -1,0 +1,309 @@
+
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<title>Dynamiska Trianglar – rubriker ovanför & rutor inuti</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    /* Snabba justeringar */
+    --tri-scale: 1.25;         /* 1.0 = standard, öka för större triangel */
+    --pill-font: 13px;         /* textstorlek för ord */
+    --pill-pad-y: 6px;         /* vertikal padding i ord */
+    --pill-pad-x: 10px;        /* horisontell padding i ord */
+    --zone-min-h: 90px;        /* minhöjd för en zon */
+    --zone-gap: 8px;           /* mellanrum mellan ord i en zon */
+    --card-width: 480px;       /* kortbredd per triangel */
+  }
+
+  body { font-family: system-ui, Arial, sans-serif; margin: 22px; background:#f6f7fb; color:#111; }
+  h1 { margin: 0 0 12px 0; }
+  button { padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer; background:#111827; color:#fff; }
+  button.secondary { background:#fff; color:#111; }
+  #controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+
+  .tri-container { margin-top:20px; display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  .tri-block { background:#fff; padding:14px; border-radius:14px; width:var(--card-width); border:1px solid #e5e7ef; box-shadow:0 1px 2px #0000000d; }
+  .tri-head { display:flex; gap:8px; align-items:center; }
+  .title-input { flex:1; min-width:0; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; }
+  .remove-btn { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
+  .row { display:flex; gap:10px; align-items:center; margin:10px 0; flex-wrap:wrap; }
+
+  /* Ordbank */
+  .bank { background:#eef4ff; padding:10px; border-radius:10px; min-height:56px; border:1px solid #d6defa; }
+  .pill{
+    display:inline-block;
+    margin:4px;
+    padding: var(--pill-pad-y) var(--pill-pad-x);
+    font-size: var(--pill-font);
+    line-height: 1.25;
+    background:#f7f9ff;
+    border:1px solid #cbd5ff;
+    border-radius:10px;
+    cursor:grab;
+    user-select:none;
+
+    /* Visa alltid hela ordet, även långa */
+    white-space: normal;             /* tillåt radbrytning */
+    word-break: break-word;          /* bryt långa ord om nödvändigt */
+    overflow-wrap: anywhere;         /* bryt även utan bindestreck */
+    overflow: visible;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Triangelram med tydliga tre fält */
+  .triangle-wrap { width:100%; overflow:visible; }
+  .triangle {
+    position:relative;
+    width:100%;
+    aspect-ratio: 1 / 0.86;                 /* proportion av en liksidig triangel */
+    transform: scale(var(--tri-scale));
+    transform-origin: top center;
+    margin-top: calc((var(--tri-scale) - 1) * 8px);
+  }
+
+  /* Bakgrundstriangel (silhuett) */
+  .tri-shape {
+    position:absolute;
+    inset:0;
+    background: #f9fbff;
+    border:18px solid #dbe4f4;
+    border-radius:10px;
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    z-index: 1;
+  }
+
+  /* Tre tydliga fält INUTI triangeln (två nere, ett uppe) */
+  .zone {
+    position:absolute;
+    z-index: 2;                            /* ovanpå bakgrundstriangel */
+    border:2px solid #c7d2e5;
+    border-radius:12px;
+    padding:10px;
+    min-height: var(--zone-min-h);
+    display:flex;
+    flex-wrap:wrap;
+    align-content:flex-start;
+    gap: var(--zone-gap);
+    box-sizing: border-box;
+
+    /* Visa allt – rulla vid behov om det blir mycket */
+    overflow:auto;
+    background: #ffffffd8;
+    backdrop-filter: blur(1px);
+  }
+
+  /* Placeringar – mer inuti & närmare varandra */
+  .z-top   { top:20%; left:50%; width:60%; transform:translateX(-50%); }
+  .z-left  { top:64%; left:35%; width:30%; transform:translateX(-50%); }
+  .z-right { top:64%; left:65%; width:30%; transform:translateX(-50%); }
+
+  /* Diskreta men distinkta färger per zon */
+  .z-top  { background: #fff8e6e6; border-color:#f1c96a; }
+  .z-left { background: #e9fbf0e6; border-color:#78d49a; }
+  .z-right{ background: #eaf1ffea; border-color:#8fb3ff; }
+
+  /* Rubriker – alltid Ovanför respektive ruta */
+  .zone-label {
+    position:absolute; z-index:3; font-size:12px; font-weight:700;
+    padding:4px 8px; border-radius:8px; color:#0f172a; background:#ffffff; border:1px solid #e2e8f0;
+    white-space:nowrap;
+  }
+  .lab-top  { top:15%; left:50%; transform:translateX(-50%); }
+  .lab-left { top:58%; left:35%; transform:translateX(-50%); }
+  .lab-right{ top:58%; left:65%; transform:translateX(-50%); }
+
+  /* Export-låda */
+  .export-box { margin-top:18px; padding:12px; background:#fff; border-radius:10px; border:1px solid #cbd5e1; white-space:pre; font-size:13px; display:none; max-width:100%; overflow:auto; }
+
+  /* Responsiv */
+  @media (max-width: 560px){
+    :root { --tri-scale: 1.05; --pill-font: 12px; --pill-pad-y: 5px; --pill-pad-x: 9px; --card-width: 100%; }
+    .tri-block { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Dynamiska Trianglar – rubriker ovanför & rutor inuti</h1>
+<div id="controls">
+  <button id="addTri">+ Ny triangel</button>
+  <button id="exportTri" class="secondary">Exportera alla</button>
+
+  <!-- Snabba reglage (frivilliga) -->
+  <label class="secondary" style="padding:6px 10px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#111;">
+    Textstorlek ord:
+    <select id="sizeSelect" style="margin-left:6px;">
+      <option value="12">12 px</option>
+      <option value="13" selected>13 px</option>
+      <option value="14">14 px</option>
+      <option value="16">16 px</option>
+    </select>
+  </label>
+  <label class="secondary" style="padding:6px 10px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#111;">
+    Triangelstorlek:
+    <select id="scaleSelect" style="margin-left:6px;">
+      <option value="1.10">Liten+</option>
+      <option value="1.25" selected>Medium</option>
+      <option value="1.40">Stor</option>
+      <option value="1.60">Extra stor</option>
+    </select>
+  </label>
+</div>
+
+<div id="triHolder" class="tri-container"></div>
+<pre id="exportBox" class="export-box"></pre>
+
+<script>
+let triCount = 0;
+
+// Skapa en ny triangel
+function createTriangle() {
+  triCount++;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'tri-block';
+  wrapper.dataset.id = triCount;
+
+  wrapper.innerHTML = `
+    <div class="tri-head">
+      <input class="title-input" placeholder="Namn på triangel (t.ex. Team Alfa)">
+      <button class="remove-btn" title="Ta bort denna triangel">Ta bort</button>
+    </div>
+
+    <div class="row">
+      <strong>Ord:</strong>
+      <button class="secondary addWordBtn" title="Lägg till ett ord">+ Lägg till ord</button>
+      <button class="secondary addBatchBtn" title="Klistra in flera ord (ett per rad)">Importera lista</button>
+    </div>
+
+    <div class="bank" aria-label="Ordbank"></div>
+
+    <div class="triangle-wrap">
+      <div class="triangle" role="group" aria-label="Triangel med tre fält">
+        <!-- Bakgrundstriangel -->
+        <div class="tri-shape" aria-hidden="true"></div>
+
+        <!-- Tre tydliga fält inuti triangeln -->
+        <div class="zone z-top"  data-zone="Kanalens roll" aria-label="Kanalens roll"></div>
+        <div class="zone z-left" data-zone="Aktiveringslogik" aria-label="Aktiveringslogik"></div>
+        <div class="zone z-right" data-zone="Informationsdjup" aria-label="Informationsdjup"></div>
+
+        <!-- Rubriker ovanför respektive ruta -->
+        <span class="zone-label lab-top">Kanalens roll</span>
+        <span class="zone-label lab-left">Aktiveringslogik</span>
+        <span class="zone-label lab-right">Informationsdjup</span>
+      </div>
+    </div>
+  `;
+
+  // Ta bort triangel
+  wrapper.querySelector('.remove-btn').addEventListener('click', () => {
+    wrapper.remove();
+  });
+
+  // Lägg till ett ord
+  wrapper.querySelector('.addWordBtn').addEventListener('click', () => {
+    const word = prompt("Ange ord att lägga till:");
+    if (!word) return;
+    addWord(wrapper, word.trim());
+  });
+
+  // Importera flera ord i batch (ett per rad)
+  wrapper.querySelector('.addBatchBtn').addEventListener('click', () => {
+    const list = prompt("Klistra in ord – ett per rad:");
+    if (!list) return;
+    list.split(/\r?\n/).map(s => s.trim()).filter(Boolean).forEach(w => addWord(wrapper, w));
+  });
+
+  // Dra & släpp
+  setupDragAndDrop(wrapper);
+
+  document.getElementById('triHolder').appendChild(wrapper);
+}
+
+// Lägg till ett ord i banken
+function addWord(wrapper, text) {
+  const pill = document.createElement('span');
+  pill.className = 'pill';
+  pill.textContent = text;
+  pill.setAttribute('draggable', true);
+  wrapper.querySelector('.bank').appendChild(pill);
+}
+
+// Drag & drop: bank <-> zoner
+function setupDragAndDrop(wrapper) {
+  let dragEl = null;
+
+  wrapper.addEventListener('dragstart', e => {
+    const t = e.target;
+    if (t.classList.contains('pill')) {
+      dragEl = t;
+      // datatransfer krävs i vissa browsers för DnD att fungera
+      e.dataTransfer.setData('text/plain', t.textContent);
+    }
+  });
+
+  wrapper.addEventListener('dragend', () => {
+    dragEl = null;
+  });
+
+  wrapper.querySelectorAll('.bank, .zone').forEach(area => {
+    area.addEventListener('dragover', e => e.preventDefault());
+    area.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragEl) {
+        area.appendChild(dragEl);
+        dragEl.style.maxWidth = '100%';
+      }
+    });
+  });
+}
+
+// Exportera alla trianglar (JSON)
+document.getElementById('exportTri').addEventListener('click', () => {
+  const all = [];
+  document.querySelectorAll('.tri-block').forEach(block => {
+    const name = block.querySelector('.title-input').value || "Namnlös triangel";
+
+    const zones = {};
+    block.querySelectorAll('.zone').forEach(z => {
+      zones[z.dataset.zone] = [...z.querySelectorAll('.pill')].map(p => p.textContent);
+    });
+
+    const bankWords = [...block.querySelectorAll('.bank .pill')].map(p => p.textContent);
+
+    all.push({ name, bank: bankWords, zones });
+  });
+
+  const box = document.getElementById('exportBox');
+  box.textContent = JSON.stringify(all, null, 2);
+  box.style.display = 'block';
+});
+
+// UI-kontroller
+document.getElementById('addTri').addEventListener('click', createTriangle);
+
+// Snabb justering av ordens textstorlek globalt
+document.getElementById('sizeSelect').addEventListener('change', (e) => {
+  const val = parseInt(e.target.value, 10);
+  document.documentElement.style.setProperty('--pill-font', val + 'px');
+  const padY = Math.max(4, Math.round(val * 0.45));
+  const padX = Math.max(8, Math.round(val * 0.75));
+  document.documentElement.style.setProperty('--pill-pad-y', padY + 'px');
+  document.documentElement.style.setProperty('--pill-pad-x', padX + 'px');
+});
+
+// Justera triangelns skala globalt
+document.getElementById('scaleSelect').addEventListener('change', (e) => {
+  const scale = e.target.value;
+  document.documentElement.style.setProperty('--tri-scale', scale);
+});
+
+// Starta med en första triangel
+createTriangle();
+</script>
+
+</body>
+</html>
