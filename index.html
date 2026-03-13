@@ -123,17 +123,21 @@
 
   /* Rubrik / underrubrik */
 
+
 .zone-label,
 .zone-sub{
     display:inline-block;
     max-width: fit-content;
     position: relative;
     z-index: 5;
-    background: var(--label-bg);
-    border:1px solid #e2e8f0;
-    color:#0f172a;
-    border-radius:8px;
-    padding:4px 8px;
+
+    /* Ta bort box-stilen */
+    background: none;
+    border: none;
+    padding: 0;
+
+    color:#0f172a;   /* valfritt – behåll om du vill */
+    border-radius:0; /* säkerhetsfix */
 }
 
   .zone-label{ font-size: var(--label-font); font-weight:700; }
@@ -533,6 +537,7 @@ function restoreAll() {
 
 </body>
 </html>
+
 
 
 
