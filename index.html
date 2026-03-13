@@ -88,13 +88,14 @@
     transform: scale(var(--tri-scale));
     transform-origin: top center;
     margin-top: calc((var(--tri-scale) - 1) * 8px);
-   
     overflow:visible;
   }
   .tri-bg {
     position:absolute;
     inset:0;
-    clip-path: inherit;
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
     background: linear-gradient(180deg, #f9fbff 0%, #f3f7ff 100%);
     /* diskret skugga */
     filter: drop-shadow(0 8px 14px rgba(0,0,0,0.08));
@@ -513,6 +514,7 @@ function restoreAll() {
 
 </body>
 </html>
+
 
 
 
