@@ -3,18 +3,28 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8" />
-<title>Dynamiska Trianglar – Tydliga fält & fulla ord</title>
+<title>Dynamiska Trianglar – responsiva zoner & underrubriker</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   :root{
-    /* Justera storlek & text snabbt här */
-    --tri-scale: 1.25;         /* skala på triangeln (1.0 = standard) */
+    /* Snabba justeringar */
+    --tri-scale: 1.25;         /* 1.0 = standard, öka för större triangel */
     --pill-font: 13px;         /* textstorlek för ord */
     --pill-pad-y: 6px;         /* vertikal padding i ord */
     --pill-pad-x: 10px;        /* horisontell padding i ord */
-    --zone-min-h: 90px;        /* minhöjd för en zon */
     --zone-gap: 8px;           /* mellanrum mellan ord i en zon */
-    --card-width: 480px;       /* bredare kort = mer plats */
+    --card-width: 480px;       /* kortbredd per triangel */
+
+    /* Geometrin för triangelns indelning (kan justeras fritt) */
+    --apex-y: 6%;              /* var “spetsen” för top-zonen börjar (lite ned från toppen för luft) */
+    --split-y: 64%;            /* höjden där top-zonen möter bottenzonerna */
+    --left-x: 16%;             /* X-koordinat där delningslinjen möter vänster sida */
+    --right-x: 84%;            /* X-koordinat där delningslinjen möter höger sida */
+
+    /* Stil för rubriker/underrubriker */
+    --label-font: 12px;
+    --sublabel-font: 12px;
+    --label-bg: #ffffff;
   }
 
   body { font-family: system-ui, Arial, sans-serif; margin: 22px; background:#f6f7fb; color:#111; }
@@ -33,7 +43,7 @@
   /* Ordbank */
   .bank { background:#eef4ff; padding:10px; border-radius:10px; min-height:56px; border:1px solid #d6defa; }
   .pill{
-    display:inline-block;         /* håll dem som "lappar" */
+    display:inline-block;
     margin:4px;
     padding: var(--pill-pad-y) var(--pill-pad-x);
     font-size: var(--pill-font);
@@ -44,75 +54,100 @@
     cursor:grab;
     user-select:none;
 
-    /* Viktigt för att alltid visa hela ordet: */
-    white-space: normal;          /* tillåt radbrytning */
-    word-break: break-word;       /* bryt långa ord om nödvändigt */
-    overflow: visible;            /* ingen trunkering */
+    /* Visa alltid hela ordet, även långa */
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    overflow: visible;
     max-width: 100%;
     box-sizing: border-box;
   }
 
-  /* Triangelram med tydliga tre fält */
+  /* Triangelram och mask */
   .triangle-wrap { width:100%; overflow:visible; }
   .triangle {
     position:relative;
     width:100%;
-    aspect-ratio: 1 / 0.86;                 /* proportion av en liksidig triangel */
+    aspect-ratio: 1 / 0.86;     /* proportion av en liksidig triangel */
     transform: scale(var(--tri-scale));
     transform-origin: top center;
     margin-top: calc((var(--tri-scale) - 1) * 8px);
+
+    /* Viktigt: Klipp allt innehåll till triangelns form */
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    overflow: hidden;
   }
 
-  /* Yttre triangelsilhuett */
+  /* Bakgrundstriangel (silhuett) med tydlig kant */
   .tri-shape {
     position:absolute;
     inset:0;
     background: #f9fbff;
     border:18px solid #dbe4f4;
     border-radius:10px;
-    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    clip-path: inherit;           /* samma form som container */
     z-index: 1;
   }
 
-  /* Tre tydliga fält (botten vänster, botten höger, toppen) */
+  /* Tre zoner som kilar som fyller triangeln */
   .zone {
     position:absolute;
-    z-index: 2;                            /* ovanför bakgrundstriangel */
-    border:2px solid #c7d2e5;
-    border-radius:12px;
-    padding:10px;
-    min-height: var(--zone-min-h);
+    inset:0;                      /* täck hela containern – klipps av clip-path nedan */
+    z-index: 2;
     display:flex;
     flex-wrap:wrap;
     align-content:flex-start;
     gap: var(--zone-gap);
+    padding:10px;
     box-sizing: border-box;
+    overflow:auto;
 
-    /* Visa hela innehållet, men tillåt scroll om det blir för mycket */
-    overflow:auto;                         /* viktiga för full synlighet */
-    background: #ffffffd8;                 /* ljus, tydlig bakgrund */
-    backdrop-filter: blur(1px);
+    /* diskret bakgrund & kant */
+    border:2px solid transparent;
+    background-clip: padding-box;
   }
 
-  /* Positioner – två nere, ett uppe */
-  .z-top   { top:10%;  left:50%; width:64%; transform:translateX(-50%); }
-  .z-left  { top:64%;  left:20%; width:40%; transform:translate(-50%, -50%); }
-  .z-right { top:64%;  left:80%; width:40%; transform:translate(-50%, -50%); }
+  /* Kilformer: top / left / right */
+  .z-top  {
+    clip-path: polygon(50% var(--apex-y), var(--right-x) var(--split-y), var(--left-x) var(--split-y));
+    background: #fff8e6e6;
+    border-color:#f1c96a;
+  }
+  .z-left {
+    clip-path: polygon(0% 100%, 50% 100%, var(--left-x) var(--split-y));
+    background: #e9fbf0e6;
+    border-color:#78d49a;
+  }
+  .z-right{
+    clip-path: polygon(50% 100%, 100% 100%, var(--right-x) var(--split-y));
+    background: #eaf1ffea;
+    border-color:#8fb3ff;
+  }
 
-  /* Zonfärger (diskreta men distinkta) */
-  .z-top  { background: #fff8e6e6; border-color:#f1c96a; }
-  .z-left { background: #e9fbf0e6; border-color:#78d49a; }
-  .z-right{ background: #eaf1ffea; border-color:#8fb3ff; }
-
-  /* Zonetiketter */
-  .zone-label {
-    position:absolute; z-index:3; font-size:12px; font-weight:700;
-    padding:4px 8px; border-radius:8px; color:#0f172a; background:#ffffff; border:1px solid #e2e8f0;
+  /* Rubriker & underrubriker – placerade inuti triangeln */
+  .zone-label,
+  .zone-sublabel{
+    position:absolute;
+    z-index: 3;
+    background: var(--label-bg);
+    border:1px solid #e2e8f0;
+    color:#0f172a;
+    border-radius:8px;
+    padding:4px 8px;
     white-space:nowrap;
   }
-  .lab-top  { top:6%;  left:50%; transform:translate(-50%, 0); }
-  .lab-left { top:82%; left:22%; transform:translate(-50%, 0); }
-  .lab-right{ top:82%; left:78%; transform:translate(-50%, 0); }
+  .zone-label{ font-size: var(--label-font); font-weight:700; }
+  .zone-sublabel{ font-size: var(--sublabel-font); font-weight:500; color:#334155; }
+
+  /* Placeringar – justera om du vill */
+  .lab-top    { top: calc(var(--apex-y) + 2%);  left:50%; transform:translateX(-50%); }
+  .sub-top    { top: calc(var(--apex-y) + 7%);  left:50%; transform:translateX(-50%); }
+
+  .lab-left   { top: calc(var(--split-y) + 3%); left:24%; transform:translateX(-50%); }
+  .sub-left   { top: calc(var(--split-y) + 7%); left:24%; transform:translateX(-50%); }
+
+  .lab-right  { top: calc(var(--split-y) + 3%); left:76%; transform:translateX(-50%); }
+  .sub-right  { top: calc(var(--split-y) + 7%); left:76%; transform:translateX(-50%); }
 
   /* Export-låda */
   .export-box { margin-top:18px; padding:12px; background:#fff; border-radius:10px; border:1px solid #cbd5e1; white-space:pre; font-size:13px; display:none; max-width:100%; overflow:auto; }
@@ -121,17 +156,18 @@
   @media (max-width: 560px){
     :root { --tri-scale: 1.05; --pill-font: 12px; --pill-pad-y: 5px; --pill-pad-x: 9px; --card-width: 100%; }
     .tri-block { width: 100%; }
+    .zone-label, .zone-sublabel { font-size: 11px; }
   }
 </style>
 </head>
 <body>
 
-<h1>Dynamiska Trianglar – tydliga fält & fulla ord</h1>
+<h1>Dynamiska Trianglar – responsiva zoner & underrubriker</h1>
 <div id="controls">
   <button id="addTri">+ Ny triangel</button>
   <button id="exportTri" class="secondary">Exportera alla</button>
 
-  <!-- Snabba justeringar vid behov -->
+  <!-- Snabba reglage (frivilliga) -->
   <label class="secondary" style="padding:6px 10px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#111;">
     Textstorlek ord:
     <select id="sizeSelect" style="margin-left:6px;">
@@ -156,10 +192,19 @@
 <pre id="exportBox" class="export-box"></pre>
 
 <script>
+/* =======================
+   Ändra rubriker här 👇
+   ======================= */
+const DEFAULT_LABELS = {
+  top:   { title: 'Kanalens roll',   subtitle: 'Syfte & placeringsprincip' },
+  left:  { title: 'Aktiveringslogik', subtitle: 'När & hur triggas kanalen?' },
+  right: { title: 'Informationsdjup', subtitle: 'Detaljnivå & förväntat innehåll' }
+};
+
 let triCount = 0;
 
 // Skapa en ny triangel
-function createTriangle() {
+function createTriangle(labels = DEFAULT_LABELS) {
   triCount++;
   const wrapper = document.createElement('div');
   wrapper.className = 'tri-block';
@@ -184,15 +229,20 @@ function createTriangle() {
         <!-- Bakgrundstriangel -->
         <div class="tri-shape" aria-hidden="true"></div>
 
-        <!-- Tre tydliga fält -->
-        <div class="zone z-top"  data-zone="Kanalens roll" aria-label="Kanalens roll"></div>
-        <div class="zone z-left" data-zone="Aktiveringslogik" aria-label="Aktiveringslogik"></div>
-        <div class="zone z-right" data-zone="Informationsdjup" aria-label="Informationsdjup"></div>
+        <!-- Tre zoner – kilformade och responsiva -->
+        <div class="zone z-top"   data-key="top"   data-zone="${labels.top.title}"   aria-label="${labels.top.title}"></div>
+        <div class="zone z-left"  data-key="left"  data-zone="${labels.left.title}"  aria-label="${labels.left.title}"></div>
+        <div class="zone z-right" data-key="right" data-zone="${labels.right.title}" aria-label="${labels.right.title}"></div>
 
-        <!-- Etiketter för fälten -->
-        <span class="zone-label lab-top">Kanalens roll</span>
-        <span class="zone-label lab-left">Aktiveringslogik</span>
-        <span class="zone-label lab-right">Informationsdjup</span>
+        <!-- Rubriker -->
+        <span class="zone-label lab-top">${labels.top.title}</span>
+        <span class="zone-label lab-left">${labels.left.title}</span>
+        <span class="zone-label lab-right">${labels.right.title}</span>
+
+        <!-- Underrubriker -->
+        <span class="zone-sublabel sub-top">${labels.top.subtitle}</span>
+        <span class="zone-sublabel sub-left">${labels.left.subtitle}</span>
+        <span class="zone-sublabel sub-right">${labels.right.subtitle}</span>
       </div>
     </div>
   `;
@@ -254,7 +304,6 @@ function setupDragAndDrop(wrapper) {
       e.preventDefault();
       if (dragEl) {
         area.appendChild(dragEl);
-        // Se till att pillet inte blir bredare än zonen/banken
         dragEl.style.maxWidth = '100%';
       }
     });
@@ -272,9 +321,22 @@ document.getElementById('exportTri').addEventListener('click', () => {
       zones[z.dataset.zone] = [...z.querySelectorAll('.pill')].map(p => p.textContent);
     });
 
+    // ta med rubriker/underrubriker i export
+    const labels = {};
+    const sublabels = {};
+    const root = block.querySelector('.triangle');
+
+    labels['Kanalens roll'] = (root.querySelector('.lab-top')   || {}).textContent || '';
+    labels['Aktiveringslogik'] = (root.querySelector('.lab-left')  || {}).textContent || '';
+    labels['Informationsdjup'] = (root.querySelector('.lab-right') || {}).textContent || '';
+
+    sublabels['Kanalens roll'] = (root.querySelector('.sub-top')   || {}).textContent || '';
+    sublabels['Aktiveringslogik'] = (root.querySelector('.sub-left')  || {}).textContent || '';
+    sublabels['Informationsdjup'] = (root.querySelector('.sub-right') || {}).textContent || '';
+
     const bankWords = [...block.querySelectorAll('.bank .pill')].map(p => p.textContent);
 
-    all.push({ name, bank: bankWords, zones });
+    all.push({ name, bank: bankWords, zones, labels, sublabels });
   });
 
   const box = document.getElementById('exportBox');
@@ -283,7 +345,7 @@ document.getElementById('exportTri').addEventListener('click', () => {
 });
 
 // UI-kontroller
-document.getElementById('addTri').addEventListener('click', createTriangle);
+document.getElementById('addTri').addEventListener('click', () => createTriangle());
 
 // Snabb justering av ordens textstorlek globalt
 document.getElementById('sizeSelect').addEventListener('change', (e) => {
