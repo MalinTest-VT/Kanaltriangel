@@ -88,11 +88,14 @@ button.secondary {
     gap:6px;
 }
 
-.tri-title-display {
+/* VISUELL RUBRIK: placerad PRECIS ovanför triangelns spets (B2) */
+.tri-title-above {
     font-size: 20px;
     font-weight: 700;
     color: #0f172a;
-    min-height: 1.2em;
+    text-align: center;
+    min-height: 1.2em;   /* undvik layout-hopp innan text skrivs */
+    margin-bottom: 6px;  /* lite luft ner till triangeln */
 }
 
 .title-input {
@@ -245,7 +248,8 @@ button.secondary {
 
 <div id="controls">
   <button id="addTri">+ Ny triangel</button>
-  <button id="exportTri" class="secondary">Exportera alla</button>
+  <button id="exportPdfEach">Exportera PDF (en fil per triangel)</button>
+  <button id="exportTri" class="secondary">Exportera JSON</button>
 
   <label class="secondary" style="padding:6px 10px;">
     Textstorlek ord:
@@ -279,6 +283,9 @@ button.secondary {
 <div id="triHolder" class="tri-container"></div>
 <pre id="exportBox" class="export-box"></pre>
 
+<!-- PDF dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
 const DEFAULT_LABELS = {
@@ -298,8 +305,7 @@ const DEFAULT_WORDS = [
 let AUTOSAVE_SEC = 3;
 let autosaveTimer = null;
 
-const STORAGE_KEY = 'triangle-workshop-state-v4';
-
+const STORAGE_KEY = 'triangle-workshop-state-v6';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -307,7 +313,9 @@ document.addEventListener('DOMContentLoaded', () => {
     createTriangle(DEFAULT_LABELS, true)
   );
 
-  document.getElementById('exportTri').addEventListener('click', exportAll);
+  document.getElementById('exportTri').addEventListener('click', exportAllJSON);
+  document.getElementById('exportPdfEach').addEventListener('click', exportPdfsPerTriangle);
+
   document.getElementById('sizeSelect').addEventListener('change', onSizeChange);
   document.getElementById('scaleSelect').addEventListener('change', onScaleChange);
 
@@ -318,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const range = document.getElementById('autosaveRange');
   const rangeVal = document.getElementById('autosaveVal');
-
   range.addEventListener('input', (e) => {
     AUTOSAVE_SEC = parseInt(e.target.value);
     rangeVal.textContent = AUTOSAVE_SEC + 's';
@@ -326,14 +333,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const restored = restoreAll();
-
   if (!restored) {
     createTriangle(DEFAULT_LABELS, true);
   }
 
   restartAutosave();
 });
-
 
 /* SKAPA TRIANGEL */
 let triCount = 0;
@@ -345,7 +350,6 @@ function createTriangle(labels = DEFAULT_LABELS, addDefaults = true) {
 
   wrapper.innerHTML = `
     <div class="tri-head">
-      <div class="tri-title-display"></div>
       <input class="title-input" placeholder="Namn på triangel">
       <button class="remove-btn">Ta bort</button>
     </div>
@@ -359,6 +363,9 @@ function createTriangle(labels = DEFAULT_LABELS, addDefaults = true) {
     <div class="bank"></div>
 
     <div class="triangle-wrap">
+      <!-- VISUELL RUBRIK: precis ovanför triangeln (B2) -->
+      <div class="tri-title-above"></div>
+
       <div class="triangle">
         <div class="tri-bg"></div>
 
@@ -385,10 +392,11 @@ function createTriangle(labels = DEFAULT_LABELS, addDefaults = true) {
   `;
 
   const titleInput = wrapper.querySelector('.title-input');
-  const titleDisplay = wrapper.querySelector('.tri-title-display');
+  const titleAbove = wrapper.querySelector('.tri-title-above');
 
+  // Live-uppdatera visuell rubrik
   titleInput.addEventListener('input', () => {
-    titleDisplay.textContent = titleInput.value.trim();
+    titleAbove.textContent = titleInput.value.trim();
   });
 
   if (addDefaults) {
@@ -396,24 +404,18 @@ function createTriangle(labels = DEFAULT_LABELS, addDefaults = true) {
   }
 
   wrapper.querySelector('.remove-btn').addEventListener('click', () => wrapper.remove());
-
   wrapper.querySelector('.addWordBtn').addEventListener('click', () => {
     const word = prompt("Ange ord:");
     if (word) addWord(wrapper, word.trim());
   });
-
   wrapper.querySelector('.addBatchBtn').addEventListener('click', () => {
     const list = prompt("Klistra in ord (ett per rad):");
-    if (list) {
-      list.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
-        .forEach(w => addWord(wrapper, w));
-    }
+    if (list) list.split(/\r?\n/).map(s => s.trim()).filter(Boolean).forEach(w => addWord(wrapper, w));
   });
 
   setupDragAndDrop(wrapper);
   document.getElementById('triHolder').appendChild(wrapper);
 }
-
 
 /* PILL */
 function makePill(text) {
@@ -427,7 +429,6 @@ function addWord(wrapper, text) {
   wrapper.querySelector('.bank').appendChild(makePill(text));
 }
 
-
 /* DRAG & DROP */
 function setupDragAndDrop(wrapper) {
   let dragEl = null;
@@ -438,29 +439,24 @@ function setupDragAndDrop(wrapper) {
       e.dataTransfer.setData('text/plain', dragEl.textContent);
     }
   });
-
   wrapper.addEventListener('dragend', () => dragEl = null);
 
   wrapper.querySelectorAll('.bank, .zone').forEach(area => {
     area.addEventListener('dragover', e => e.preventDefault());
     area.addEventListener('drop', e => {
       e.preventDefault();
-      if (dragEl) {
-        area.appendChild(dragEl);
-      }
+      if (dragEl) area.appendChild(dragEl);
     });
   });
 }
 
-
-/* EXPORT */
-function exportAll() {
+/* JSON-EXPORT */
+function exportAllJSON() {
   const all = collectAllState();
   const box = document.getElementById('exportBox');
   box.textContent = JSON.stringify(all, null, 2);
   box.style.display = 'block';
 }
-
 
 /* UI */
 function onSizeChange(e) {
@@ -471,7 +467,6 @@ function onScaleChange(e) {
   document.documentElement.style.setProperty('--tri-scale', e.target.value);
 }
 
-
 /* AUTOSAVE */
 function restartAutosave() {
   if (autosaveTimer) clearInterval(autosaveTimer);
@@ -481,14 +476,11 @@ function restartAutosave() {
   }, AUTOSAVE_SEC * 1000);
 }
 
-
 /* STATE */
 function collectAllState() {
   const triangles = [];
   document.querySelectorAll('.tri-block').forEach(block => {
-
     const title = block.querySelector('.title-input').value || '';
-
     const triRoot = block.querySelector('.triangle');
 
     const labels = {
@@ -496,20 +488,17 @@ function collectAllState() {
       left: triRoot.querySelector('.zone-left .zone-label').textContent,
       right: triRoot.querySelector('.zone-right .zone-label').textContent
     };
-
     const sublabels = {
       top: triRoot.querySelector('.zone-top .zone-sub').textContent,
       left: triRoot.querySelector('.zone-left .zone-sub').textContent,
       right: triRoot.querySelector('.zone-right .zone-sub').textContent
     };
 
-    const bank = [...block.querySelectorAll('.bank .pill')]
-      .map(p => p.textContent);
+    const bank = [...block.querySelectorAll('.bank .pill')].map(p => p.textContent);
 
     const zones = {};
     triRoot.querySelectorAll('.zone').forEach(z => {
-      zones[z.dataset.key] = [...z.querySelectorAll('.pill')]
-        .map(p => p.textContent);
+      zones[z.dataset.key] = [...z.querySelectorAll('.pill')].map(p => p.textContent);
     });
 
     triangles.push({ name: title, labels, sublabels, bank, zones });
@@ -518,44 +507,114 @@ function collectAllState() {
   return { triangles };
 }
 
-
 function restoreAll() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return false;
 
     const data = JSON.parse(raw);
+    if (!Array.isArray(data.triangles)) return false;
 
-    if (Array.isArray(data.triangles)) {
-      data.triangles.forEach(t => {
-        createTriangle(DEFAULT_LABELS, false);
+    data.triangles.forEach(t => {
+      createTriangle(DEFAULT_LABELS, false);
 
-        const block = document.querySelector('.tri-block:last-of-type');
+      const block = document.querySelector('.tri-block:last-of-type');
+      block.querySelector('.title-input').value = t.name || '';
+      block.querySelector('.tri-title-above').textContent = t.name || '';
 
-        block.querySelector('.title-input').value = t.name || '';
-        block.querySelector('.tri-title-display').textContent = t.name || '';
+      const bank = block.querySelector('.bank');
+      (t.bank || []).forEach(w => bank.appendChild(makePill(w)));
 
-        const bank = block.querySelector('.bank');
-        t.bank.forEach(w => bank.appendChild(makePill(w)));
+      const triRoot = block.querySelector('.triangle');
+      ['top','left','right'].forEach(k => {
+        const lbl = triRoot.querySelector(`.zone-${k} .zone-label`);
+        const sub = triRoot.querySelector(`.zone-${k} .zone-sub`);
+        if (lbl) lbl.textContent = t.labels?.[k] || '';
+        if (sub) sub.textContent = t.sublabels?.[k] || '';
 
-        const triRoot = block.querySelector('.triangle');
-
-        ['top','left','right'].forEach(k => {
-          const lbl = triRoot.querySelector(`.zone-${k} .zone-label`);
-          const sub = triRoot.querySelector(`.zone-${k} .zone-sub`);
-          lbl.textContent = t.labels[k];
-          sub.textContent = t.sublabels[k];
-
-          const zone = triRoot.querySelector(`.zone[data-key="${k}"]`);
-          t.zones[k].forEach(w => zone.appendChild(makePill(w)));
-        });
+        const zone = triRoot.querySelector(`.zone[data-key="${k}"]`);
+        (t.zones?.[k] || []).forEach(w => zone.appendChild(makePill(w)));
       });
-    }
+    });
+
     return true;
   } catch (e) {
     console.warn("Restore failed:", e);
     return false;
   }
+}
+
+/* ---------- PDF (en fil per triangel) ---------- */
+async function exportPdfsPerTriangle() {
+  const blocks = [...document.querySelectorAll('.tri-block')];
+  if (blocks.length === 0) {
+    alert('Det finns inga trianglar att exportera.');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+
+    const title = (block.querySelector('.title-input').value || `Triangel ${i+1}`).trim();
+    const triangleEl = block.querySelector('.triangle');
+
+    // Rendera triangeln som bild (pixel-perfekt)
+    const canvas = await html2canvas(triangleEl, {
+      backgroundColor: '#ffffff',
+      scale: Math.max(2, Math.floor(window.devicePixelRatio || 2))
+    });
+    const imgData = canvas.toDataURL('image/png');
+
+    // Skapa PDF (A4, porträtt)
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+
+    const margin = 36;           // 0.5 inch
+    const titleSize = 20;
+    const lineGap = 8;
+
+    // Skriv rubrik (över triangeln)
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(titleSize);
+
+    // Hantera långa rubriker snyggt (radbryt)
+    const textMaxWidth = pageW - margin * 2;
+    const lines = pdf.splitTextToSize(title, textMaxWidth);
+    let y = margin + titleSize;
+    pdf.text(lines, margin, y);
+
+    // Avstånd till bild
+    y += lineGap;
+
+    // Räkna ut storlek på bild för att passa sidan
+    const imgW = canvas.width;
+    const imgH = canvas.height;
+    const availW = pageW - margin * 2;
+    const availH = pageH - y - margin;
+
+    const scale = Math.min(availW / imgW, availH / imgH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+
+    pdf.addImage(imgData, 'PNG', margin, y, drawW, drawH);
+
+    // Spara fil – slugga filnamn
+    const fileName = slugify(title || `Triangel ${i+1}`) + '.pdf';
+    pdf.save(fileName);
+  }
+}
+
+function slugify(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '')
+    || 'triangel';
 }
 </script>
 
