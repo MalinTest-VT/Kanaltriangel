@@ -3,22 +3,19 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8" />
-<title>Kanaltriangel – Workshop</title>
+<title>Kanaltriangel</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<!-- ==== EXTERNA SCRIPT ==== -->
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
 <style>
-/* ======== ROOT VARIABLER ======== */
 :root{
-    --tri-scale: 1.18;
+    --tri-scale: 1.25;
     --pill-font: 13px;
     --pill-pad-y: 6px;
     --pill-pad-x: 10px;
     --zone-gap: 8px;
+    --card-width: 520px;
 
+    /* Symmetrisk triangel */
     --top-w: 60%;
     --top-h: 28%;
     --top-y: 6%;
@@ -26,90 +23,113 @@
     --bottom-w: 40%;
     --bottom-h: 34%;
     --bottom-y: 46%;
+
     --spread-x: 22%;
 
-    --label-font: 10px;
-    --sublabel-font: 9px;
+    --zone-top-bg:  #F3FCFF;
+    --zone-left-bg: #e9fbf0;
+    --zone-right-bg:#eaf1ff;
+    --zone-top-border:  #f1c96a;
+    --zone-left-border: #78d49a;
+    --zone-right-border:#8fb3ff;
 
-    --panel-width: 400px;
+    --label-font: 10px;
+    --sublabel-font: 8px;
 }
 
-/* ======== PAGE LAYOUT ======== */
 body {
     font-family: system-ui, Arial, sans-serif;
-    margin: 0;
+    margin: 22px;
     background:#f6f7fb;
+    color:#111;
 }
-h1 { margin: 20px; }
+h1 { margin: 0 0 12px 0; }
 
-/* Vänster kolumn = trianglar */
-#mainArea {
-    margin-right: var(--panel-width);
-    padding: 20px;
+button {
+    padding:9px 12px;
+    border-radius:8px;
+    border:1px solid #cbd5e1;
+    cursor:pointer;
+    background:#111827;
+    color:#fff;
 }
-
-/* Fast ordpanel höger */
-#wordPanel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: var(--panel-width);
-    height: 100vh;
-    background: #ffffff;
-    border-left: 1px solid #dce0ed;
-    box-shadow: -2px 0 6px rgba(0,0,0,0.06);
-    padding: 20px;
-    overflow-y: auto;
+button.secondary {
+    background:#fff;
+    color:#111;
 }
 
-#panelTitle {
-    font-weight: 700;
-    font-size: 18px;
-    margin-bottom: 10px;
-}
-#panelWords {
-    min-height: 100px;
-    background:#eef4ff;
-    border: 1px solid #cbd5ff;
-    border-radius: 10px;
-    padding: 10px;
+#controls {
     display:flex;
+    gap:12px;
     flex-wrap:wrap;
-    gap:6px;
+    align-items:center;
 }
 
-/* ======== Triangelblock vänster ======== */
+.tri-container { 
+    margin-top:20px;
+    display:flex;
+    gap:24px;
+    flex-wrap:wrap;
+    align-items:flex-start;
+}
+
 .tri-block {
     background:#fff;
     padding:14px;
     border-radius:14px;
-    width: 580px;
+    width:var(--card-width);
     border:1px solid #e5e7ef;
-    box-shadow:0 1px 2px #0001;
-    margin-bottom: 24px;
+    box-shadow:0 1px 2px #0000000d;
 }
 
-.title-input {
-    width: 100%;
-    padding:8px 10px;
-    border-radius:8px;
-    border:1px solid #cbd5e1;
-    margin-bottom:8px;
+.tri-head {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
 }
 
-/* Rubrik direkt ovanför triangeln */
+/* VISUELL RUBRIK: placerad PRECIS ovanför triangelns spets (B2) */
 .tri-title-above {
     font-size: 20px;
     font-weight: 700;
     color: #0f172a;
     text-align: center;
-    min-height: 1.2em;
-    margin-bottom: 6px;
+    min-height: 1.2em;   /* undvik layout-hopp innan text skrivs */
+    margin-bottom: 6px;  /* lite luft ner till triangeln */
 }
 
-/* ======== PILLS ======== */
+.title-input {
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid #cbd5e1;
+}
+
+.remove-btn {
+    background:#fee2e2;
+    color:#b91c1c;
+    border-color:#fecaca;
+    margin-top:6px;
+}
+
+.row {
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin:10px 0;
+    flex-wrap:wrap;
+}
+
+.bank {
+    background:#eef4ff;
+    padding:10px;
+    border-radius:10px;
+    min-height:56px;
+    border:1px solid #d6defa;
+}
+
 .pill {
     display:inline-block;
+    margin:4px;
     padding: var(--pill-pad-y) var(--pill-pad-x);
     font-size: var(--pill-font);
     background:#f7f9ff;
@@ -117,20 +137,21 @@ h1 { margin: 20px; }
     border-radius:10px;
     cursor:grab;
     user-select:none;
-    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
-/* ======== TRIANGEL ======== */
-.triangle-wrap {
-    width:100%;
-}
+/* TRIANGEL */
+.triangle-wrap { width:100%; overflow:visible; }
+
 .triangle {
     position:relative;
     width:100%;
     aspect-ratio: 1 / 0.86;
     transform: scale(var(--tri-scale));
     transform-origin: top center;
+    margin-top: calc((var(--tri-scale) - 1) * 8px);
 }
+
 .tri-bg {
     position:absolute;
     inset:0;
@@ -140,15 +161,15 @@ h1 { margin: 20px; }
     z-index: 1;
 }
 
-/* ======== Zone-boxar ======== */
 .zone-box {
     position:absolute;
     z-index:2;
     display:flex;
     flex-direction:column;
     align-items:center;
-    gap:4px;
+    gap:6px;
 }
+
 .zone-top {
     top: var(--top-y);
     left: 50%;
@@ -156,6 +177,7 @@ h1 { margin: 20px; }
     width: var(--top-w);
     min-height: var(--top-h);
 }
+
 .zone-left {
     top: var(--bottom-y);
     left: calc(50% - var(--spread-x));
@@ -163,6 +185,7 @@ h1 { margin: 20px; }
     width: var(--bottom-w);
     min-height: var(--bottom-h);
 }
+
 .zone-right {
     top: var(--bottom-y);
     left: calc(50% + var(--spread-x));
@@ -171,7 +194,13 @@ h1 { margin: 20px; }
     min-height: var(--bottom-h);
 }
 
-/* Rubriker */
+.zone-label,
+.zone-sub{
+    text-align:center;
+    background:none;
+    padding:0;
+    color:#0f172a;
+}
 .zone-label {
     font-size: var(--label-font);
     font-weight:700;
@@ -180,12 +209,11 @@ h1 { margin: 20px; }
     font-size: var(--sublabel-font);
     font-weight:500;
     color:#334155;
-    min-height: 1em;
 }
 
-/* Zone-låda */
 .zone {
     width:100%;
+    flex:1 1 auto;
     min-height:60px;
     border:2px solid #c7d2e5;
     border-radius:12px;
@@ -196,46 +224,70 @@ h1 { margin: 20px; }
     background:#ffffffd8;
 }
 
-/* Kontroller */
-.controls { margin-bottom: 15px; }
-button {
-    padding:8px 12px;
-    border-radius:6px;
-    border: 1px solid #cbd5e1;
-    background:#1f2937;
-    color:white;
-}
-button.secondary {
-    background:white;
-    color:#111;
+.zone[data-key="top"]  { background: color-mix(in srgb, var(--zone-top-bg) 55%, #fff); border-color: var(--zone-top-border); }
+.zone[data-key="left"] { background: color-mix(in srgb, var(--zone-left-bg) 55%, #fff); border-color: var(--zone-left-border); }
+.zone[data-key="right"]{ background: color-mix(in srgb, var(--zone-right-bg) 55%, #fff); border-color: var(--zone-right-border); }
+
+.export-box {
+    margin-top:18px;
+    padding:12px;
+    background:#fff;
+    border-radius:10px;
+    border:1px solid #cbd5e1;
+    white-space:pre;
+    font-size:13px;
+    display:none;
+    max-width:100%;
+    overflow:auto;
 }
 </style>
 </head>
 <body>
 
-<h1>Kanaltrianglar</h1>
+<h1>Kanaltriangel</h1>
 
-<div class="controls" style="display:flex; gap:12px; margin:20px;">
+<div id="controls">
   <button id="addTri">+ Ny triangel</button>
-  <button class="secondary" id="exportAllPdf">Exportera alla som PDF</button>
+  <button id="exportPdfEach">Exportera PDF (en fil per triangel)</button>
+  <button id="exportTri" class="secondary">Exportera JSON</button>
+
+  <label class="secondary" style="padding:6px 10px;">
+    Textstorlek ord:
+    <select id="sizeSelect">
+      <option value="12">12 px</option>
+      <option value="13" selected>13 px</option>
+      <option value="14">14 px</option>
+      <option value="16">16 px</option>
+    </select>
+  </label>
+
+  <label class="secondary" style="padding:6px 10px;">
+    Triangelstorlek:
+    <select id="scaleSelect">
+      <option value="1.05">Liten</option>
+      <option value="1.25" selected>Medium</option>
+      <option value="1.40">Stor</option>
+      <option value="1.60">Extra stor</option>
+    </select>
+  </label>
+
+  <label class="secondary" style="padding:6px 10px; display:flex; align-items:center; gap:6px;">
+    Autospara (sek):
+    <input id="autosaveRange" type="range" min="2" max="25" value="3">
+    <span id="autosaveVal">3s</span>
+  </label>
+
+  <button id="clearStorage" class="secondary">Rensa sparat</button>
 </div>
 
-<!-- ======== TRIANGEL-OMRÅDE ======== -->
-<div id="mainArea"></div>
+<div id="triHolder" class="tri-container"></div>
+<pre id="exportBox" class="export-box"></pre>
 
-<!-- ======== FAST ORDPANEL ======== -->
-<div id="wordPanel">
-    <div id="panelTitle">Ingen triangel vald</div>
-
-    <button id="addWordBtn" class="secondary">+ Lägg till ord</button>
-
-    <div id="panelWords"></div>
-</div>
+<!-- PDF dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-/* ===============================
-   Grunddata
-   =============================== */
 const DEFAULT_LABELS = {
   top:   { title: 'Kanalens roll',    subtitle: 'Syfte & placeringsprincip' },
   left:  { title: 'Aktiveringslogik', subtitle: 'När & hur triggas kanalen?' },
@@ -250,281 +302,319 @@ const DEFAULT_WORDS = [
   "Till ALLA resenärer"
 ];
 
-let triangles = [];
-let activeTri = null;
-const AUTOSAVE_KEY = "tri-system-v2";
+let AUTOSAVE_SEC = 3;
+let autosaveTimer = null;
 
-/* ===============================
-   INIT
-   =============================== */
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("addTri").onclick = () => createTriangle(true);
-    document.getElementById("addWordBtn").onclick = addWordToActive;
-    document.getElementById("exportAllPdf").onclick = exportAllPdf;
+const STORAGE_KEY = 'triangle-workshop-state-v6';
 
-    if (!restore()) {
-        createTriangle(true);
-    }
+document.addEventListener('DOMContentLoaded', () => {
 
-    setInterval(save, 2000);
+  document.getElementById('addTri').addEventListener('click', () =>
+    createTriangle(DEFAULT_LABELS, true)
+  );
+
+  document.getElementById('exportTri').addEventListener('click', exportAllJSON);
+  document.getElementById('exportPdfEach').addEventListener('click', exportPdfsPerTriangle);
+
+  document.getElementById('sizeSelect').addEventListener('change', onSizeChange);
+  document.getElementById('scaleSelect').addEventListener('change', onScaleChange);
+
+  document.getElementById('clearStorage').addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_KEY);
+    alert('Sparad data rensad.');
+  });
+
+  const range = document.getElementById('autosaveRange');
+  const rangeVal = document.getElementById('autosaveVal');
+  range.addEventListener('input', (e) => {
+    AUTOSAVE_SEC = parseInt(e.target.value);
+    rangeVal.textContent = AUTOSAVE_SEC + 's';
+    restartAutosave();
+  });
+
+  const restored = restoreAll();
+  if (!restored) {
+    createTriangle(DEFAULT_LABELS, true);
+  }
+
+  restartAutosave();
 });
 
-/* ===============================
-   SKAPA TRIANGEL
-   =============================== */
-function createTriangle(includeDefaults) {
-    const id = "tri_" + Date.now();
-    const block = document.createElement("div");
-    block.className = "tri-block";
-    block.dataset.id = id;
+/* SKAPA TRIANGEL */
+let triCount = 0;
+function createTriangle(labels = DEFAULT_LABELS, addDefaults = true) {
+  triCount++;
 
-    block.innerHTML = `
+  const wrapper = document.createElement('div');
+  wrapper.className = 'tri-block';
+
+  wrapper.innerHTML = `
+    <div class="tri-head">
       <input class="title-input" placeholder="Namn på triangel">
-      <div class="triangle-wrap">
-        <div class="tri-title-above"></div>
-        <div class="triangle">
-          <div class="tri-bg"></div>
+      <button class="remove-btn">Ta bort</button>
+    </div>
 
-          <div class="zone-box zone-top">
-            <span class="zone-label" contenteditable="true">${DEFAULT_LABELS.top.title}</span>
-            <div class="zone-sub" contenteditable="true">${DEFAULT_LABELS.top.subtitle}</div>
-            <div class="zone" data-key="top"></div>
-          </div>
+    <div class="row">
+      <strong>Ord:</strong>
+      <button class="secondary addWordBtn">+ Lägg till ord</button>
+      <button class="secondary addBatchBtn">Importera lista</button>
+    </div>
 
-          <div class="zone-box zone-left">
-            <span class="zone-label" contenteditable="true">${DEFAULT_LABELS.left.title}</span>
-            <div class="zone-sub" contenteditable="true">${DEFAULT_LABELS.left.subtitle}</div>
-            <div class="zone" data-key="left"></div>
-          </div>
+    <div class="bank"></div>
 
-          <div class="zone-box zone-right">
-            <span class="zone-label" contenteditable="true">${DEFAULT_LABELS.right.title}</span>
-            <div class="zone-sub" contenteditable="true">${DEFAULT_LABELS.right.subtitle}</div>
-            <div class="zone" data-key="right"></div>
-          </div>
+    <div class="triangle-wrap">
+      <!-- VISUELL RUBRIK: precis ovanför triangeln (B2) -->
+      <div class="tri-title-above"></div>
+
+      <div class="triangle">
+        <div class="tri-bg"></div>
+
+        <div class="zone-box zone-top">
+          <span class="zone-label" contenteditable="true">${labels.top.title}</span>
+          <div class="zone-sub" contenteditable="true">${labels.top.subtitle}</div>
+          <div class="zone" data-key="top"></div>
         </div>
+
+        <div class="zone-box zone-left">
+          <span class="zone-label" contenteditable="true">${labels.left.title}</span>
+          <div class="zone-sub" contenteditable="true">${labels.left.subtitle}</div>
+          <div class="zone" data-key="left"></div>
+        </div>
+
+        <div class="zone-box zone-right">
+          <span class="zone-label" contenteditable="true">${labels.right.title}</span>
+          <div class="zone-sub" contenteditable="true">${labels.right.subtitle}</div>
+          <div class="zone" data-key="right"></div>
+        </div>
+
       </div>
-    `;
+    </div>
+  `;
 
-    block.addEventListener("click", () => setActiveTriangle(id));
+  const titleInput = wrapper.querySelector('.title-input');
+  const titleAbove = wrapper.querySelector('.tri-title-above');
 
-    const titleInput = block.querySelector(".title-input");
-    const titleAbove = block.querySelector(".tri-title-above");
-    titleInput.addEventListener("input", () => {
-        titleAbove.textContent = titleInput.value.trim();
-    });
+  // Live-uppdatera visuell rubrik
+  titleInput.addEventListener('input', () => {
+    titleAbove.textContent = titleInput.value.trim();
+  });
 
-    document.getElementById("mainArea").appendChild(block);
+  if (addDefaults) {
+    DEFAULT_WORDS.forEach(w => addWord(wrapper, w));
+  }
 
-    triangles.push({
-        id,
-        el: block,
-        words: includeDefaults ? [...DEFAULT_WORDS] : []
-    });
+  wrapper.querySelector('.remove-btn').addEventListener('click', () => wrapper.remove());
+  wrapper.querySelector('.addWordBtn').addEventListener('click', () => {
+    const word = prompt("Ange ord:");
+    if (word) addWord(wrapper, word.trim());
+  });
+  wrapper.querySelector('.addBatchBtn').addEventListener('click', () => {
+    const list = prompt("Klistra in ord (ett per rad):");
+    if (list) list.split(/\r?\n/).map(s => s.trim()).filter(Boolean).forEach(w => addWord(wrapper, w));
+  });
 
-    setActiveTriangle(id);
+  setupDragAndDrop(wrapper);
+  document.getElementById('triHolder').appendChild(wrapper);
 }
 
-/* ===============================
-   AKTIV TRIANGEL
-   =============================== */
-function setActiveTriangle(id) {
-    activeTri = triangles.find(t => t.id === id);
-    if (!activeTri) return;
-
-    document.querySelectorAll(".tri-block").forEach(b => {
-        b.style.outline = (b.dataset.id === id) ? "2px solid #2563eb" : "none";
-    });
-
-    const title = activeTri.el.querySelector(".title-input").value;
-    document.getElementById("panelTitle").textContent = title || "Ingen titel";
-
-    rebuildWordPanel();
-    enableTriangleDrop(activeTri);
-}
-
-/* ===============================
-   ORDPANEL
-   =============================== */
-function rebuildWordPanel() {
-    const panel = document.getElementById("panelWords");
-    panel.innerHTML = "";
-    if (!activeTri) return;
-
-    activeTri.words.forEach(w => {
-        const p = makePill(w);
-        p.addEventListener("dragstart", e => {
-            e.dataTransfer.setData("text/plain", w);
-        });
-        panel.appendChild(p);
-    });
-}
-
-/* ===============================
-   ADD WORD
-   =============================== */
-function addWordToActive() {
-    if (!activeTri) return;
-    const w = prompt("Nytt ord:");
-    if (!w) return;
-    activeTri.words.push(w.trim());
-    rebuildWordPanel();
-}
-
-/* ===============================
-   SKAPA PILL
-   =============================== */
+/* PILL */
 function makePill(text) {
-    const p = document.createElement("span");
-    p.className = "pill";
-    p.textContent = text;
-    p.draggable = true;
-    return p;
+  const pill = document.createElement('span');
+  pill.className = 'pill';
+  pill.textContent = text;
+  pill.setAttribute('draggable', true);
+  return pill;
+}
+function addWord(wrapper, text) {
+  wrapper.querySelector('.bank').appendChild(makePill(text));
 }
 
-/* ===============================
-   DROP-ZONER I TRIANGELN
-   =============================== */
-function enableTriangleDrop(tri) {
-    const zones = tri.el.querySelectorAll(".zone");
+/* DRAG & DROP */
+function setupDragAndDrop(wrapper) {
+  let dragEl = null;
 
-    zones.forEach(zone => {
-        zone.addEventListener("dragover", e => e.preventDefault());
+  wrapper.addEventListener('dragstart', e => {
+    if (e.target.classList.contains('pill')) {
+      dragEl = e.target;
+      e.dataTransfer.setData('text/plain', dragEl.textContent);
+    }
+  });
+  wrapper.addEventListener('dragend', () => dragEl = null);
 
-        zone.addEventListener("drop", e => {
-            e.preventDefault();
-            const word = e.dataTransfer.getData("text/plain");
-            if (!word) return;
+  wrapper.querySelectorAll('.bank, .zone').forEach(area => {
+    area.addEventListener('dragover', e => e.preventDefault());
+    area.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragEl) area.appendChild(dragEl);
+    });
+  });
+}
 
-            activeTri.words = activeTri.words.filter(w => w !== word);
+/* JSON-EXPORT */
+function exportAllJSON() {
+  const all = collectAllState();
+  const box = document.getElementById('exportBox');
+  box.textContent = JSON.stringify(all, null, 2);
+  box.style.display = 'block';
+}
 
-            zone.appendChild(makePill(word));
-            rebuildWordPanel();
-        });
+/* UI */
+function onSizeChange(e) {
+  const val = parseInt(e.target.value);
+  document.documentElement.style.setProperty('--pill-font', val + 'px');
+}
+function onScaleChange(e) {
+  document.documentElement.style.setProperty('--tri-scale', e.target.value);
+}
+
+/* AUTOSAVE */
+function restartAutosave() {
+  if (autosaveTimer) clearInterval(autosaveTimer);
+  autosaveTimer = setInterval(() => {
+    const state = collectAllState();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, AUTOSAVE_SEC * 1000);
+}
+
+/* STATE */
+function collectAllState() {
+  const triangles = [];
+  document.querySelectorAll('.tri-block').forEach(block => {
+    const title = block.querySelector('.title-input').value || '';
+    const triRoot = block.querySelector('.triangle');
+
+    const labels = {
+      top: triRoot.querySelector('.zone-top .zone-label').textContent,
+      left: triRoot.querySelector('.zone-left .zone-label').textContent,
+      right: triRoot.querySelector('.zone-right .zone-label').textContent
+    };
+    const sublabels = {
+      top: triRoot.querySelector('.zone-top .zone-sub').textContent,
+      left: triRoot.querySelector('.zone-left .zone-sub').textContent,
+      right: triRoot.querySelector('.zone-right .zone-sub').textContent
+    };
+
+    const bank = [...block.querySelectorAll('.bank .pill')].map(p => p.textContent);
+
+    const zones = {};
+    triRoot.querySelectorAll('.zone').forEach(z => {
+      zones[z.dataset.key] = [...z.querySelectorAll('.pill')].map(p => p.textContent);
     });
 
-    setupPanelDrop();
+    triangles.push({ name: title, labels, sublabels, bank, zones });
+  });
+
+  return { triangles };
 }
 
-/* ===============================
-   DROP I PANELEN (från triangeln)
-   =============================== */
-function setupPanelDrop() {
-    const panel = document.getElementById("panelWords");
-
-    panel.addEventListener("dragover", e => e.preventDefault());
-    panel.addEventListener("drop", e => {
-        e.preventDefault();
-        const word = e.dataTransfer.getData("text/plain");
-        if (!word) return;
-
-        if (!activeTri.words.includes(word)) {
-            activeTri.words.push(word);
-        }
-
-        const pills = activeTri.el.querySelectorAll(".zone .pill");
-        pills.forEach(p => {
-            if (p.textContent === word) p.remove();
-        });
-
-        rebuildWordPanel();
-    });
-}
-
-/* ===============================
-   AUTOSAVE & RESTORE
-   =============================== */
-function save() {
-    const out = triangles.map(t => {
-        const name = t.el.querySelector(".title-input").value;
-
-        const labels = {};
-        const subs = {};
-        ["top","left","right"].forEach(k => {
-            labels[k] = t.el.querySelector(`.zone-${k} .zone-label`).textContent;
-            subs[k] = t.el.querySelector(`.zone-${k} .zone-sub`).textContent;
-        });
-
-        const zones = {};
-        t.el.querySelectorAll(".zone").forEach(z => {
-            zones[z.dataset.key] =
-                [...z.querySelectorAll(".pill")].map(p=>p.textContent);
-        });
-
-        return {
-            id: t.id,
-            name,
-            words: t.words,
-            labels,
-            subs,
-            zones
-        };
-    });
-
-    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(out));
-}
-
-function restore() {
-    const raw = localStorage.getItem(AUTOSAVE_KEY);
+function restoreAll() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return false;
 
-    const arr = JSON.parse(raw);
-    arr.forEach(t => {
-        createTriangle(false);
-        const tri = triangles.find(x => x.id === t.id);
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data.triangles)) return false;
 
-        tri.el.querySelector(".title-input").value = t.name;
-        tri.el.querySelector(".tri-title-above").textContent = t.name;
-        tri.words = t.words;
+    data.triangles.forEach(t => {
+      createTriangle(DEFAULT_LABELS, false);
 
-        ["top","left","right"].forEach(k => {
-            tri.el.querySelector(`.zone-${k} .zone-label`).textContent = t.labels[k];
-            tri.el.querySelector(`.zone-${k} .zone-sub`).textContent = t.subs[k];
-        });
+      const block = document.querySelector('.tri-block:last-of-type');
+      block.querySelector('.title-input').value = t.name || '';
+      block.querySelector('.tri-title-above').textContent = t.name || '';
 
-        Object.entries(t.zones).forEach(([k, list]) => {
-            const z = tri.el.querySelector(`.zone[data-key="${k}"]`);
-            list.forEach(w => z.appendChild(makePill(w)));
-        });
+      const bank = block.querySelector('.bank');
+      (t.bank || []).forEach(w => bank.appendChild(makePill(w)));
+
+      const triRoot = block.querySelector('.triangle');
+      ['top','left','right'].forEach(k => {
+        const lbl = triRoot.querySelector(`.zone-${k} .zone-label`);
+        const sub = triRoot.querySelector(`.zone-${k} .zone-sub`);
+        if (lbl) lbl.textContent = t.labels?.[k] || '';
+        if (sub) sub.textContent = t.sublabels?.[k] || '';
+
+        const zone = triRoot.querySelector(`.zone[data-key="${k}"]`);
+        (t.zones?.[k] || []).forEach(w => zone.appendChild(makePill(w)));
+      });
     });
 
-    setActiveTriangle(arr[0].id);
     return true;
+  } catch (e) {
+    console.warn("Restore failed:", e);
+    return false;
+  }
 }
 
-/* ===============================
-   PDF EXPORT (en per triangel)
-   =============================== */
-async function exportAllPdf() {
-    const { jsPDF } = window.jspdf;
+/* ---------- PDF (en fil per triangel) ---------- */
+async function exportPdfsPerTriangle() {
+  const blocks = [...document.querySelectorAll('.tri-block')];
+  if (blocks.length === 0) {
+    alert('Det finns inga trianglar att exportera.');
+    return;
+  }
 
-    for (const t of triangles) {
-        const title = t.el.querySelector(".title-input").value || "Triangel";
-        const triDiv = t.el.querySelector(".triangle");
+  const { jsPDF } = window.jspdf;
 
-        const canvas = await html2canvas(triDiv, {
-            backgroundColor: "#ffffff",
-            scrollY: -window.scrollY,
-            scale: 2
-        });
-        const img = canvas.toDataURL("image/png");
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
 
-        const pdf = new jsPDF("p","pt","a4");
-        const pageW = pdf.internal.pageSize.getWidth();
-        const margin = 36;
+    const title = (block.querySelector('.title-input').value || `Triangel ${i+1}`).trim();
+    const triangleEl = block.querySelector('.triangle');
 
-        pdf.setFont("helvetica","bold");
-        pdf.setFontSize(20);
-        pdf.text(title, margin, margin+10);
+    // Rendera triangeln som bild (pixel-perfekt)
+    const canvas = await html2canvas(triangleEl, {
+      backgroundColor: '#ffffff',
+      scale: Math.max(2, Math.floor(window.devicePixelRatio || 2))
+    });
+    const imgData = canvas.toDataURL('image/png');
 
-        const availW = pageW - margin*2;
-        const scale = availW / canvas.width;
-        const drawW = canvas.width * scale;
-        const drawH = canvas.height * scale;
+    // Skapa PDF (A4, porträtt)
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
 
-        pdf.addImage(img,"PNG", margin, margin+30, drawW, drawH);
-        pdf.save(title.replace(/\s+/g,"_")+".pdf");
-    }
+    const margin = 36;           // 0.5 inch
+    const titleSize = 20;
+    const lineGap = 8;
+
+    // Skriv rubrik (över triangeln)
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(titleSize);
+
+    // Hantera långa rubriker snyggt (radbryt)
+    const textMaxWidth = pageW - margin * 2;
+    const lines = pdf.splitTextToSize(title, textMaxWidth);
+    let y = margin + titleSize;
+    pdf.text(lines, margin, y);
+
+    // Avstånd till bild
+    y += lineGap;
+
+    // Räkna ut storlek på bild för att passa sidan
+    const imgW = canvas.width;
+    const imgH = canvas.height;
+    const availW = pageW - margin * 2;
+    const availH = pageH - y - margin;
+
+    const scale = Math.min(availW / imgW, availH / imgH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+
+    pdf.addImage(imgData, 'PNG', margin, y, drawW, drawH);
+
+    // Spara fil – slugga filnamn
+    const fileName = slugify(title || `Triangel ${i+1}`) + '.pdf';
+    pdf.save(fileName);
+  }
+}
+
+function slugify(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '')
+    || 'triangel';
 }
 </script>
 
