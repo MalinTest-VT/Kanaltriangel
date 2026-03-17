@@ -6,7 +6,7 @@
 <title>Kanaltriangel – Workshop</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<!-- PDF dependencies -->
+<!-- ==== EXTERNA SCRIPT ==== -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
@@ -19,11 +19,6 @@
     --pill-pad-x: 10px;
     --zone-gap: 8px;
 
-    --safe-top: 6%;
-    --safe-side: 6%;
-    --safe-bottom: 8%;
-
-    /* Triangelplaceringar */
     --top-w: 60%;
     --top-h: 28%;
     --top-y: 6%;
@@ -102,7 +97,7 @@ h1 { margin: 20px; }
     margin-bottom:8px;
 }
 
-/* Rubrik direkt ovanför triangeln (B2) */
+/* Rubrik direkt ovanför triangeln */
 .tri-title-above {
     font-size: 20px;
     font-weight: 700;
@@ -125,13 +120,10 @@ h1 { margin: 20px; }
     word-break: break-word;
 }
 
-/* ======== TRIANGLE ======== */
+/* ======== TRIANGEL ======== */
 .triangle-wrap {
     width:100%;
-    overflow:visible;
-    margin-top: 6px;
 }
-
 .triangle {
     position:relative;
     width:100%;
@@ -139,7 +131,6 @@ h1 { margin: 20px; }
     transform: scale(var(--tri-scale));
     transform-origin: top center;
 }
-
 .tri-bg {
     position:absolute;
     inset:0;
@@ -158,7 +149,6 @@ h1 { margin: 20px; }
     align-items:center;
     gap:4px;
 }
-
 .zone-top {
     top: var(--top-y);
     left: 50%;
@@ -206,6 +196,7 @@ h1 { margin: 20px; }
     background:#ffffffd8;
 }
 
+/* Kontroller */
 .controls { margin-bottom: 15px; }
 button {
     padding:8px 12px;
@@ -229,12 +220,12 @@ button.secondary {
   <button class="secondary" id="exportAllPdf">Exportera alla som PDF</button>
 </div>
 
-<!-- ======== TRIANGLE AREA ======== -->
+<!-- ======== TRIANGEL-OMRÅDE ======== -->
 <div id="mainArea"></div>
 
-<!-- ======== WORD PANEL RIGHT ======== -->
+<!-- ======== FAST ORDPANEL ======== -->
 <div id="wordPanel">
-    <div id="panelTitle">Inga trianglar valda</div>
+    <div id="panelTitle">Ingen triangel vald</div>
 
     <button id="addWordBtn" class="secondary">+ Lägg till ord</button>
 
@@ -243,7 +234,7 @@ button.secondary {
 
 <script>
 /* ===============================
-   Konstanter
+   Grunddata
    =============================== */
 const DEFAULT_LABELS = {
   top:   { title: 'Kanalens roll',    subtitle: 'Syfte & placeringsprincip' },
@@ -261,7 +252,7 @@ const DEFAULT_WORDS = [
 
 let triangles = [];
 let activeTri = null;
-let AUTOSAVE_KEY = "tri-system-v1";
+const AUTOSAVE_KEY = "tri-system-v2";
 
 /* ===============================
    INIT
@@ -269,9 +260,11 @@ let AUTOSAVE_KEY = "tri-system-v1";
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("addTri").onclick = () => createTriangle(true);
     document.getElementById("addWordBtn").onclick = addWordToActive;
+    document.getElementById("exportAllPdf").onclick = exportAllPdf;
 
-    const restored = restore();
-    if (!restored) createTriangle(true);
+    if (!restore()) {
+        createTriangle(true);
+    }
 
     setInterval(save, 2000);
 });
@@ -279,13 +272,13 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ===============================
    SKAPA TRIANGEL
    =============================== */
-function createTriangle(withDefaults) {
+function createTriangle(includeDefaults) {
     const id = "tri_" + Date.now();
-    const wrapper = document.createElement("div");
-    wrapper.className = "tri-block";
-    wrapper.dataset.id = id;
+    const block = document.createElement("div");
+    block.className = "tri-block";
+    block.dataset.id = id;
 
-    wrapper.innerHTML = `
+    block.innerHTML = `
       <input class="title-input" placeholder="Namn på triangel">
       <div class="triangle-wrap">
         <div class="tri-title-above"></div>
@@ -309,28 +302,25 @@ function createTriangle(withDefaults) {
             <div class="zone-sub" contenteditable="true">${DEFAULT_LABELS.right.subtitle}</div>
             <div class="zone" data-key="right"></div>
           </div>
-
         </div>
       </div>
     `;
 
-    wrapper.onclick = () => setActiveTriangle(id);
-    const titleInput = wrapper.querySelector('.title-input');
-    const titleAbove = wrapper.querySelector('.tri-title-above');
+    block.addEventListener("click", () => setActiveTriangle(id));
 
+    const titleInput = block.querySelector(".title-input");
+    const titleAbove = block.querySelector(".tri-title-above");
     titleInput.addEventListener("input", () => {
         titleAbove.textContent = titleInput.value.trim();
     });
 
-    document.getElementById("mainArea").appendChild(wrapper);
+    document.getElementById("mainArea").appendChild(block);
 
     triangles.push({
         id,
-        el: wrapper,
-        words: withDefaults ? [...DEFAULT_WORDS] : []
+        el: block,
+        words: includeDefaults ? [...DEFAULT_WORDS] : []
     });
-
-    if (withDefaults) rebuildActiveIf(id, true);
 
     setActiveTriangle(id);
 }
@@ -346,10 +336,11 @@ function setActiveTriangle(id) {
         b.style.outline = (b.dataset.id === id) ? "2px solid #2563eb" : "none";
     });
 
-    document.getElementById("panelTitle").textContent =
-        activeTri.el.querySelector(".title-input").value || "Ingen titel";
+    const title = activeTri.el.querySelector(".title-input").value;
+    document.getElementById("panelTitle").textContent = title || "Ingen titel";
 
     rebuildWordPanel();
+    enableTriangleDrop(activeTri);
 }
 
 /* ===============================
@@ -361,14 +352,16 @@ function rebuildWordPanel() {
     if (!activeTri) return;
 
     activeTri.words.forEach(w => {
-        panel.appendChild(makePill(w));
+        const p = makePill(w);
+        p.addEventListener("dragstart", e => {
+            e.dataTransfer.setData("text/plain", w);
+        });
+        panel.appendChild(p);
     });
-
-    setupPanelDrag(panel);
 }
 
 /* ===============================
-   LÄGG TILL ORD (panel)
+   ADD WORD
    =============================== */
 function addWordToActive() {
     if (!activeTri) return;
@@ -390,46 +383,74 @@ function makePill(text) {
 }
 
 /* ===============================
-   DRAG & DROP LOGIK
+   DROP-ZONER I TRIANGELN
    =============================== */
-function setupPanelDrag(panel) {
-    panel.querySelectorAll(".pill").forEach(p => {
-        p.addEventListener("dragstart", e => {
-            e.dataTransfer.setData("text/plain", p.textContent);
-            e.dataTransfer.effectAllowed = "move";
+function enableTriangleDrop(tri) {
+    const zones = tri.el.querySelectorAll(".zone");
+
+    zones.forEach(zone => {
+        zone.addEventListener("dragover", e => e.preventDefault());
+
+        zone.addEventListener("drop", e => {
+            e.preventDefault();
+            const word = e.dataTransfer.getData("text/plain");
+            if (!word) return;
+
+            activeTri.words = activeTri.words.filter(w => w !== word);
+
+            zone.appendChild(makePill(word));
+            rebuildWordPanel();
         });
     });
 
-    document.querySelectorAll(".zone").forEach(z => {
-        z.addEventListener("dragover", e => e.preventDefault());
-        z.addEventListener("drop", e => {
-            e.preventDefault();
-            if (!activeTri) return;
-            const word = e.dataTransfer.getData("text/plain");
-            activeTri.words = activeTri.words.filter(x => x !== word);
-            z.appendChild(makePill(word));
-            rebuildWordPanel();
+    setupPanelDrop();
+}
+
+/* ===============================
+   DROP I PANELEN (från triangeln)
+   =============================== */
+function setupPanelDrop() {
+    const panel = document.getElementById("panelWords");
+
+    panel.addEventListener("dragover", e => e.preventDefault());
+    panel.addEventListener("drop", e => {
+        e.preventDefault();
+        const word = e.dataTransfer.getData("text/plain");
+        if (!word) return;
+
+        if (!activeTri.words.includes(word)) {
+            activeTri.words.push(word);
+        }
+
+        const pills = activeTri.el.querySelectorAll(".zone .pill");
+        pills.forEach(p => {
+            if (p.textContent === word) p.remove();
         });
+
+        rebuildWordPanel();
     });
 }
 
 /* ===============================
-   SPARA & ÅTERSTÄLL
+   AUTOSAVE & RESTORE
    =============================== */
 function save() {
-    const data = triangles.map(t => {
-        const name = t.el.querySelector(".title-input").value || "";
+    const out = triangles.map(t => {
+        const name = t.el.querySelector(".title-input").value;
+
         const labels = {};
         const subs = {};
         ["top","left","right"].forEach(k => {
             labels[k] = t.el.querySelector(`.zone-${k} .zone-label`).textContent;
             subs[k] = t.el.querySelector(`.zone-${k} .zone-sub`).textContent;
         });
+
         const zones = {};
         t.el.querySelectorAll(".zone").forEach(z => {
-            const key = z.dataset.key;
-            zones[key] = [...z.querySelectorAll(".pill")].map(p=>p.textContent);
+            zones[z.dataset.key] =
+                [...z.querySelectorAll(".pill")].map(p=>p.textContent);
         });
+
         return {
             id: t.id,
             name,
@@ -440,14 +461,14 @@ function save() {
         };
     });
 
-    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(out));
 }
 
 function restore() {
     const raw = localStorage.getItem(AUTOSAVE_KEY);
     if (!raw) return false;
-    const arr = JSON.parse(raw);
 
+    const arr = JSON.parse(raw);
     arr.forEach(t => {
         createTriangle(false);
         const tri = triangles.find(x => x.id === t.id);
@@ -472,10 +493,8 @@ function restore() {
 }
 
 /* ===============================
-   PDF EXPORT PER TRIANGEL
+   PDF EXPORT (en per triangel)
    =============================== */
-document.getElementById("exportAllPdf").onclick = exportAllPdf;
-
 async function exportAllPdf() {
     const { jsPDF } = window.jspdf;
 
@@ -488,7 +507,6 @@ async function exportAllPdf() {
             scrollY: -window.scrollY,
             scale: 2
         });
-
         const img = canvas.toDataURL("image/png");
 
         const pdf = new jsPDF("p","pt","a4");
@@ -505,7 +523,6 @@ async function exportAllPdf() {
         const drawH = canvas.height * scale;
 
         pdf.addImage(img,"PNG", margin, margin+30, drawW, drawH);
-
         pdf.save(title.replace(/\s+/g,"_")+".pdf");
     }
 }
