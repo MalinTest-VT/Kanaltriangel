@@ -300,15 +300,16 @@
 </template>
 
     
+
 <script>
 /* -------------------------------------------------------------------
-   ORDLISTOR PER ZON – standardord i varje triangels word-bank
+   STANDARDORD PER ZON
 ------------------------------------------------------------------- */
 let baseWordsTop  = ["Primär", "Huvudroll", "Övergripande", "Sammanhang"];
 let baseWordsLeft = ["Fördjupning", "Kort", "Kontext", "Detalj", "Fakta"];
 let baseWordsRight= ["Akut", "Större", "Mindre", "Kritisk", "Avvikelse"];
 
-/* Globala ord användaren lägger till */
+/* Globala ord som användaren lägger till */
 let globalAddedWords = JSON.parse(localStorage.getItem("globalAddedWords") || "[]");
 
 /* -------------------------------------------------------------------
@@ -322,58 +323,78 @@ function createTriangle() {
     const template = document.getElementById("triangleTemplate");
     const clone = template.content.cloneNode(true);
     const wrapper = clone.querySelector(".triangle-wrapper");
-
-    /* Ge varje triangel ett unikt ID */
     wrapper.dataset.id = triangleCounter;
 
-    /* Word bank referens */
     const bank = clone.querySelector(".word-bank");
 
     /* Fyll ordlistan */
-    [...baseWordsTop, ...baseWordsLeft, ...baseWordsRight, ...globalAddedWords]
-        .forEach(w => {
-            const div = document.createElement("div");
-            div.className = "item";
-            div.draggable = true;
-            div.textContent = w;
-            bank.appendChild(div);
-        });
+    [...baseWordsTop, ...baseWordsLeft, ...baseWordsRight, ...globalAddedWords].forEach(w => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.draggable = true;
+        div.textContent = w;
+        bank.appendChild(div);
+    });
 
     /* Export-knapp */
     clone.querySelector(".export-btn").onclick = () => exportPDF(wrapper);
 
+    /* Radera-knapp — vi skapar den här */
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "🗑️ Radera triangel";
+    deleteBtn.style.marginLeft = "10px";
+    deleteBtn.style.padding = "10px 16px";
+    deleteBtn.style.background = "#d9534f";
+    deleteBtn.style.color = "white";
+    deleteBtn.style.border = "none";
+    deleteBtn.style.borderRadius = "6px";
+    deleteBtn.style.cursor = "pointer";
+    deleteBtn.onclick = () => deleteTriangle(wrapper);
+    clone.querySelector(".controls").appendChild(deleteBtn);
+
     /* Lägg till i DOM */
     document.getElementById("trianglesContainer").appendChild(clone);
 
-    /* Aktivera zoner och drag/drop */
+    /* Aktivera drag/drop och tooltips */
     enableTriangle(wrapper);
 
-    /* Ladda tidigare sparad data om det finns */
+    /* Ladda tidigare sparning */
     loadTriangle(wrapper);
+}
+
+/* -------------------------------------------------------------------
+   RADERA TRIANGEL (med bekräftelseruta – ALT B)
+------------------------------------------------------------------- */
+function deleteTriangle(wrapper) {
+    const id = wrapper.dataset.id;
+
+    const confirmDelete = confirm(
+        "Är du säker på att du vill radera denna triangel?\n\n" +
+        "All data för denna triangel raderas permanent."
+    );
+
+    if (!confirmDelete) return;
+
+    /* 1. Ta bort från DOM */
+    wrapper.remove();
+
+    /* 2. Ta bort corresponding localStorage */
+    localStorage.removeItem("triangle_" + id);
 }
 
 /* -------------------------------------------------------------------
    ENABLE TRIANGLE FUNCTIONALITY
 ------------------------------------------------------------------- */
 function enableTriangle(wrapper) {
-    const triId = wrapper.dataset.id;
-
-    /* Enable drag/drop */
-    wrapper.querySelectorAll(".item").forEach(item => {
-        item.draggable = true;
-    });
-
     wrapper.addEventListener("dragstart", e => {
         if (e.target.classList.contains("item")) {
-            e.dataTransfer.setData("text/plain", e.target.textContent);
-            e.dataTransfer.effectAllowed = "move";
             window.draggedItem = e.target;
+            e.dataTransfer.effectAllowed = "move";
         }
     });
 
     wrapper.addEventListener("dragover", e => {
-        if (e.target.classList.contains("zone") ||
-            e.target.classList.contains("word-bank")) {
+        if (e.target.closest(".zone") || e.target.closest(".word-bank")) {
             e.preventDefault();
         }
     });
@@ -385,7 +406,7 @@ function enableTriangle(wrapper) {
         saveTriangle(wrapper);
     });
 
-    /* Enable tooltip icons */
+    /* Tooltip icons */
     wrapper.querySelectorAll(".info-icon").forEach(icon => {
         icon.addEventListener("click", e => {
             e.stopPropagation();
@@ -395,31 +416,28 @@ function enableTriangle(wrapper) {
 }
 
 /* -------------------------------------------------------------------
-   TOOLTIP (C2) – liten blå ruta intill ℹ️-ikon
+   TOOLTIP (C2)
 ------------------------------------------------------------------- */
 let activeTooltip = null;
 
 function showTooltip(icon, text, wrapper) {
-    /* Stäng befintlig tooltip */
     if (activeTooltip) activeTooltip.remove();
 
-    const tip = document.createElement("div");
-    tip.className = "tooltip";
-    tip.textContent = text;
-    wrapper.appendChild(tip);
+    const tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+    tooltip.textContent = text;
+    wrapper.appendChild(tooltip);
 
-    /* Position: bredvid ikonen */
     const rect = icon.getBoundingClientRect();
     const wrapRect = wrapper.getBoundingClientRect();
 
-    tip.style.left = (rect.left - wrapRect.left + 20) + "px";
-    tip.style.top  = (rect.top  - wrapRect.top  ) + "px";
+    tooltip.style.left = (rect.left - wrapRect.left + 18) + "px";
+    tooltip.style.top = (rect.top - wrapRect.top) + "px";
 
-    tip.style.display = "block";
-    activeTooltip = tip;
+    tooltip.style.display = "block";
+    activeTooltip = tooltip;
 }
 
-/* Klick utanför → stäng tooltip */
 document.addEventListener("click", () => {
     if (activeTooltip) {
         activeTooltip.remove();
@@ -428,7 +446,7 @@ document.addEventListener("click", () => {
 });
 
 /* -------------------------------------------------------------------
-   LÄGG TILL NYTT ORD (GLOBAL ORDLISTA)
+   LÄGG TILL ORD (GLOBAL)
 ------------------------------------------------------------------- */
 function addGlobalWord() {
     const input = document.getElementById("globalAddWordInput");
@@ -438,12 +456,11 @@ function addGlobalWord() {
     globalAddedWords.push(word);
     localStorage.setItem("globalAddedWords", JSON.stringify(globalAddedWords));
 
-    /* Lägg till ordet i alla word-banks */
     document.querySelectorAll(".word-bank").forEach(bank => {
         const div = document.createElement("div");
         div.className = "item";
-        div.textContent = word;
         div.draggable = true;
+        div.textContent = word;
         bank.appendChild(div);
     });
 
@@ -456,7 +473,7 @@ function addGlobalWord() {
 function saveTriangle(wrapper) {
     const id = wrapper.dataset.id;
 
-     const state = {
+    const state = {
         title: wrapper.querySelector(".triangle-title-input").value,
         top: zoneWords(wrapper, ".zone.top"),
         left: zoneWords(wrapper, ".zone.left"),
@@ -501,7 +518,7 @@ function restoreZone(wrapper, sel, words) {
 }
 
 /* -------------------------------------------------------------------
-   PDF EXPORT – inklusive titel + tooltip
+   PDF EXPORT
 ------------------------------------------------------------------- */
 async function exportPDF(wrapper) {
     if (activeTooltip) {
@@ -524,6 +541,4 @@ async function exportPDF(wrapper) {
 
 </script>
 </html>
-
-
 
