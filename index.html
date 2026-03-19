@@ -4,6 +4,11 @@
 <head>
 <meta charset="UTF-8" />
 <title>Kanaltriangel – Workshop</title>
+
+<!-- jsPDF + html2canvas för PDF-export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -13,77 +18,84 @@
     }
 
     h1 {
-        margin-bottom: 20px;
+        text-align: center;
+        margin-bottom: 10px;
     }
 
-    /* Triangel-container */
+    h2 {
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 20px;
+        color: #333;
+    }
+
     .triangle-container {
         position: relative;
-        width: 600px;
-        margin: 40px auto;
+        width: 650px;
+        margin: 0 auto;
     }
 
-    /* Själva triangeln */
     .triangle {
         width: 0;
         height: 0;
-        border-left: 300px solid transparent;
-        border-right: 300px solid transparent;
-        border-bottom: 520px solid #e6e6e6;
-        margin: 0 auto;
+        border-left: 325px solid transparent;
+        border-right: 325px solid transparent;
+        border-bottom: 560px solid #e6e6e6;
         position: relative;
     }
 
-    /* Zonernas placeringsytor */
     .zone {
         position: absolute;
-        width: 40%;
+        width: 38%;
         min-height: 120px;
         padding: 10px;
-        background: rgba(255,255,255,0.8);
+        background: rgba(255,255,255,0.85);
         border: 1px solid #ccc;
         border-radius: 8px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
     }
 
     #top-zone {
         top: 40px;
-        left: 30%;
+        left: 31%;
+        width: 38%;
         text-align: center;
     }
 
     #left-zone {
-        bottom: 40px;
+        bottom: 50px;
         left: 5%;
     }
 
     #right-zone {
-        bottom: 40px;
+        bottom: 50px;
         right: 5%;
     }
 
     .zone-title {
+        grid-column: span 3;
+        text-align: center;
         font-weight: bold;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
     }
 
-    /* Lappar/ord */
     .item {
         background: #ffffff;
         border: 1px solid #aaa;
-        padding: 6px 10px;
-        margin: 6px 0;
-        border-radius: 5px;
-        cursor: grab;
-    }
-
-    .item:active {
-        cursor: grabbing;
-    }
-
-    /* Lägg-till-ord */
-    .add-word {
+        padding: 4px;
         text-align: center;
-        margin-top: 30px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: grab;
+        user-select: none;
+    }
+
+    .controls {
+        text-align: center;
+        margin-top: 25px;
     }
 
     input[type="text"] {
@@ -92,39 +104,42 @@
     }
 
     button {
-        padding: 6px 12px;
+        padding: 8px 14px;
         margin-left: 6px;
         cursor: pointer;
     }
 </style>
+
 </head>
 <body>
 
-<h1>Kanaltriangel – Workshop</h1>
+<h1>Kanaltriangel</h1>
+<h2 id="triangleTitle">Webb</h2>
 
-<div class="triangle-container">
-    <div class="triangle"></div>
+<div id="triangleArea">
 
-    <!-- Övre zon -->
-    <div class="zone" id="top-zone">
-        <div class="zone-title">Kanalens roll</div>
+    <div class="triangle-container">
+        <div class="triangle"></div>
+
+        <div class="zone" id="top-zone">
+            <div class="zone-title">Kanalens roll</div>
+        </div>
+
+        <div class="zone" id="left-zone">
+            <div class="zone-title">Informationsdjup</div>
+        </div>
+
+        <div class="zone" id="right-zone">
+            <div class="zone-title">Nivå</div>
+        </div>
     </div>
 
-    <!-- Vänster zon -->
-    <div class="zone" id="left-zone">
-        <div class="zone-title">Informationsdjup</div>
-    </div>
-
-    <!-- Höger zon -->
-    <div class="zone" id="right-zone">
-        <div class="zone-title">Nivå</div>
-    </div>
 </div>
 
-<!-- Lägg till egna ord -->
-<div class="add-word">
+<div class="controls">
     <input id="newWordInput" type="text" placeholder="Lägg till ord…" />
     <button onclick="addNewWord()">Lägg till</button>
+    <button onclick="exportPDF()">Exportera som PDF</button>
 </div>
 
 <script>
@@ -133,16 +148,21 @@
    ----------------------------- */
 
 const predefinedWords = [
-    "Akut", "Mindre störning", "Fördjupning", "Snabbinfo",
-    "Kritisk info", "Översikt", "Varning", "Sammanhang"
+    "Akut", "Mindre", "Större", "Kritisk",
+    "Fördjupning", "Översikt", "Kontext",
+    "Varning", "Snabbinfo", "Resenärsnytta"
 ];
 
-/* Rendera startlapparna bara om de inte redan finns i localStorage */
+/* -----------------------------
+   Startfunktion
+   ----------------------------- */
+
 function initializeWords() {
     let saved = localStorage.getItem("triangleState");
+
     if (!saved) {
         predefinedWords.forEach(word => {
-            createItemElement(word, document.body);
+            createItem(word, document.body);
         });
     } else {
         loadFromStorage();
@@ -150,7 +170,19 @@ function initializeWords() {
 }
 
 /* -----------------------------
-   Drag & Drop-logik
+   Skapa ord-lappar
+   ----------------------------- */
+
+function createItem(text, parent) {
+    let div = document.createElement("div");
+    div.className = "item";
+    div.draggable = true;
+    div.textContent = text;
+    parent.appendChild(div);
+}
+
+/* -----------------------------
+   Drag & drop
    ----------------------------- */
 
 let draggedItem = null;
@@ -161,29 +193,23 @@ document.addEventListener("dragstart", e => {
     }
 });
 
-document.addEventListener("dragover", e => {
-    e.preventDefault();
-});
+document.addEventListener("dragover", e => e.preventDefault());
 
 document.addEventListener("drop", e => {
-    if (e.target.classList.contains("zone") || e.target.classList.contains("zone-title")) {
-        let zone = e.target.classList.contains("zone") ? e.target : e.target.parentElement;
+    if (e.target.classList.contains("zone") ||
+        e.target.classList.contains("triangle") ||
+        e.target.classList.contains("zone-title")) {
+
+        let zone = null;
+
+        if (e.target.classList.contains("zone")) zone = e.target;
+        if (e.target.classList.contains("zone-title")) zone = e.target.parentElement;
+        if (e.target.classList.contains("triangle")) zone = document.body;
+
         zone.appendChild(draggedItem);
         saveToStorage();
     }
 });
-
-/* -----------------------------
-   Skapa lappar
-   ----------------------------- */
-
-function createItemElement(text, parent) {
-    let div = document.createElement("div");
-    div.className = "item";
-    div.draggable = true;
-    div.textContent = text;
-    parent.appendChild(div);
-}
 
 /* -----------------------------
    Lägg till nytt ord
@@ -193,13 +219,14 @@ function addNewWord() {
     let input = document.getElementById("newWordInput");
     let text = input.value.trim();
     if (!text) return;
-    createItemElement(text, document.body);
+
+    createItem(text, document.body);
     input.value = "";
     saveToStorage();
 }
 
 /* -----------------------------
-   Autospar med localStorage
+   localStorage
    ----------------------------- */
 
 function saveToStorage() {
@@ -216,9 +243,9 @@ function loadFromStorage() {
     let zones = JSON.parse(localStorage.getItem("triangleState"));
     ["top", "left", "right"].forEach(id => {
         let zoneId = id + "-zone";
-        zones[id].forEach(word => createItemElement(word, document.getElementById(zoneId)));
+        zones[id].forEach(word => createItem(word, document.getElementById(zoneId)));
     });
-    zones.loose.forEach(word => createItemElement(word, document.body));
+    zones.loose.forEach(word => createItem(word, document.body));
 }
 
 function zoneToArray(zoneId) {
@@ -231,7 +258,27 @@ function getLooseItems() {
         .map(el => el.textContent);
 }
 
-/* Initiera sidan */
+/* -----------------------------
+   Exportera PDF lokalt
+   ----------------------------- */
+
+async function exportPDF() {
+    const element = document.getElementById("triangleArea");
+
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jspdf.jsPDF({
+        orientation: "portrait",
+        unit: "px",
+        format: [canvas.width, canvas.height]
+    });
+
+    pdf.addImage(imgData, "PNG", 0, 0);
+    pdf.save("kanaltriangel.pdf");
+}
+
+/* Init */
 initializeWords();
 </script>
 
