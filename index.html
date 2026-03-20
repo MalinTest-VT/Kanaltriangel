@@ -309,15 +309,16 @@ Vad är kanalens svaghet?
 
     
 
+
 <script>
 /* -------------------------------------------------------------------
    STANDARDORD PER ZON
 ------------------------------------------------------------------- */
 let baseWordsTop  = ["Primär", "Huvudroll", "Övergripande", "Sammanhang"];
 let baseWordsLeft = ["Fördjupning", "Kort", "Kontext", "Detalj", "Fakta"];
-let baseWordsRight= ["Akut", "Större", "Mindre", "Kritisk", "Avvikelse"];
+let baseWordsRight = ["Akut", "Större", "Mindre", "Kritisk", "Avvikelse"];
 
-/* Globala ord som användaren lägger till */
+/* Globala ord som användaren lagt till */
 let globalAddedWords = JSON.parse(localStorage.getItem("globalAddedWords") || "[]");
 
 /* -------------------------------------------------------------------
@@ -335,7 +336,7 @@ function createTriangle() {
 
     const bank = clone.querySelector(".word-bank");
 
-    /* Fyll ordlistan */
+    /* Fyll word-banken */
     [...baseWordsTop, ...baseWordsLeft, ...baseWordsRight, ...globalAddedWords].forEach(w => {
         const div = document.createElement("div");
         div.className = "item";
@@ -344,10 +345,10 @@ function createTriangle() {
         bank.appendChild(div);
     });
 
-    /* Export-knapp */
+    /* Exportknapp */
     clone.querySelector(".export-btn").onclick = () => exportPDF(wrapper);
 
-    /* Radera-knapp — vi skapar den här */
+    /* Radera-knapp */
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "🗑️ Radera triangel";
     deleteBtn.style.marginLeft = "10px";
@@ -360,40 +361,35 @@ function createTriangle() {
     deleteBtn.onclick = () => deleteTriangle(wrapper);
     clone.querySelector(".controls").appendChild(deleteBtn);
 
-    /* Lägg till i DOM */
     document.getElementById("trianglesContainer").appendChild(clone);
 
-    /* Aktivera drag/drop och tooltips */
+    /* Aktivera triangeln */
     enableTriangle(wrapper);
 
-    /* Ladda tidigare sparning */
+    /* Återställ sparad data */
     loadTriangle(wrapper);
 }
 
 /* -------------------------------------------------------------------
-   RADERA TRIANGEL (med bekräftelseruta – ALT B)
+   RADERA TRIANGEL – med bekräftelse
 ------------------------------------------------------------------- */
 function deleteTriangle(wrapper) {
     const id = wrapper.dataset.id;
 
-    const confirmDelete = confirm(
-        "Är du säker på att du vill radera denna triangel?\n\n" +
-        "All data för denna triangel raderas permanent."
-    );
+    if (!confirm("Är du säker på att du vill radera denna triangel?\n\nAll data raderas permanent.")) {
+        return;
+    }
 
-    if (!confirmDelete) return;
-
-    /* 1. Ta bort från DOM */
     wrapper.remove();
-
-    /* 2. Ta bort corresponding localStorage */
     localStorage.removeItem("triangle_" + id);
 }
 
 /* -------------------------------------------------------------------
-   ENABLE TRIANGLE FUNCTIONALITY
+   AKTIVERA TRIANGELNS FUNKTIONER
 ------------------------------------------------------------------- */
 function enableTriangle(wrapper) {
+
+    /* Drag & drop */
     wrapper.addEventListener("dragstart", e => {
         if (e.target.classList.contains("item")) {
             window.draggedItem = e.target;
@@ -414,7 +410,7 @@ function enableTriangle(wrapper) {
         saveTriangle(wrapper);
     });
 
-    /* Tooltip icons */
+    /* Tooltip-ikoner */
     wrapper.querySelectorAll(".info-icon").forEach(icon => {
         icon.addEventListener("click", e => {
             e.stopPropagation();
@@ -440,12 +436,13 @@ function showTooltip(icon, text, wrapper) {
     const wrapRect = wrapper.getBoundingClientRect();
 
     tooltip.style.left = (rect.left - wrapRect.left + 18) + "px";
-    tooltip.style.top = (rect.top - wrapRect.top) + "px";
+    tooltip.style.top  = (rect.top  - wrapRect.top) + "px";
 
     tooltip.style.display = "block";
     activeTooltip = tooltip;
 }
 
+/* Stäng tooltip vid klick utanför */
 document.addEventListener("click", () => {
     if (activeTooltip) {
         activeTooltip.remove();
@@ -454,7 +451,7 @@ document.addEventListener("click", () => {
 });
 
 /* -------------------------------------------------------------------
-   LÄGG TILL ORD (GLOBAL)
+   LÄGG TILL GLOBALT ORD
 ------------------------------------------------------------------- */
 function addGlobalWord() {
     const input = document.getElementById("globalAddWordInput");
@@ -476,7 +473,7 @@ function addGlobalWord() {
 }
 
 /* -------------------------------------------------------------------
-   AUTOSPAR / AUTOLOAD
+   AUTOSPAR OCH ÅTERLADDNING
 ------------------------------------------------------------------- */
 function saveTriangle(wrapper) {
     const id = wrapper.dataset.id;
@@ -526,15 +523,16 @@ function restoreZone(wrapper, sel, words) {
 }
 
 /* -------------------------------------------------------------------
-   PDF EXPORT
+   EXPORTERA EN TRIANGEL TILL PDF
 ------------------------------------------------------------------- */
 async function exportPDF(wrapper) {
+
     if (activeTooltip) {
         activeTooltip.remove();
         activeTooltip = null;
     }
 
-    const canvas = await html2canvas(wrapper, {scale: 2});
+    const canvas = await html2canvas(wrapper, { scale: 2 });
     const imgData = canvas.toDataURL("image/png");
 
     const pdf = new jspdf.jsPDF({
@@ -547,9 +545,8 @@ async function exportPDF(wrapper) {
     pdf.save("kanaltriangel_" + wrapper.dataset.id + ".pdf");
 }
 
-    
 /* -------------------------------------------------------------------
-   EXPORTERA ALLA TRIANGELER TILL EN PDF (en sida per triangel)
+   EXPORTERA ALLA TRIANGELER → EN PDF (en sida per triangel)
 ------------------------------------------------------------------- */
 async function exportAllPDF() {
 
@@ -570,16 +567,29 @@ async function exportAllPDF() {
 
         const wrapper = all[i];
 
-        // Rendera triangel till canvas
+        // Canvasrendering
         const canvas = await html2canvas(wrapper, { scale: 2 });
         const imgData = canvas.toDataURL("image/png");
 
-        // Skala bilden för att passa A4
+        // Skalning till A4
         const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
         const imgWidth = pageWidth * 0.92;
-       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
+        if (i !== 0) pdf.addPage();
+
+        pdf.addImage(
+            imgData,
+            "PNG",
+            pageWidth * 0.04,
+            20,
+            imgWidth,
+            imgHeight
+        );
+    }
+
+    pdf.save("kanaltrianglar.pdf");
+}
 </script>
 </html>
 
