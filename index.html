@@ -219,6 +219,11 @@
 <button class="new-triangle-btn" onclick="createTriangle()">
     ➕ Skapa ny triangel
 </button>
+    
+<button class="new-triangle-btn" onclick="exportAllPDF()">
+    📄 Exportera ALLA trianglar som PDF
+</button>
+
 
 <!-- Här hamnar alla trianglar -->
 <div id="trianglesContainer"></div>
@@ -541,6 +546,39 @@ async function exportPDF(wrapper) {
     pdf.addImage(imgData, "PNG", 0, 0);
     pdf.save("kanaltriangel_" + wrapper.dataset.id + ".pdf");
 }
+
+    
+/* -------------------------------------------------------------------
+   EXPORTERA ALLA TRIANGELER TILL EN PDF (en sida per triangel)
+------------------------------------------------------------------- */
+async function exportAllPDF() {
+
+    if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+    }
+
+    const pdf = new jspdf.jsPDF({
+        orientation: "portrait",
+        unit: "px",
+        format: "a4"
+    });
+
+    const all = [...document.querySelectorAll(".triangle-wrapper")];
+
+    for (let i = 0; i < all.length; i++) {
+
+        const wrapper = all[i];
+
+        // Rendera triangel till canvas
+        const canvas = await html2canvas(wrapper, { scale: 2 });
+        const imgData = canvas.toDataURL("image/png");
+
+        // Skala bilden för att passa A4
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pageWidth * 0.92;
+        const imgHeight
 
 </script>
 </html>
