@@ -275,7 +275,9 @@ Vad är kanalens svaghet?
                     <div class="zone-title-container">
                         <span class="zone-title">Informationsdjup</span>
                         <span class="info-icon"
-                              data-tooltip="blablabla">
+                              data-tooltip="Vilken typ av info kan kanalen bära?        
+(ex. kort och koncist, fördjupning, personaliserad etc.)
+">
                             ℹ️
                         </span>
                     </div>
@@ -284,9 +286,11 @@ Vad är kanalens svaghet?
                 <!-- ZON 3 – Nivå -->
                 <div class="zone right">
                     <div class="zone-title-container">
-                        <span class="zone-title">Nivå</span>
+                        <span class="zone-title">Tillämpning</span>
                         <span class="info-icon"
-                              data-tooltip="blablabla">
+                              data-tooltip="När ska kanalen triggas? När ska kanalen användas?
+ När ska kanalen inte användas? Vad passar här? (ex. Allmän info, akuta lägen, lokala störningar)
+ ">
                             ℹ️
                         </span>
                     </div>
@@ -314,9 +318,9 @@ Vad är kanalens svaghet?
 /* -------------------------------------------------------------------
    STANDARDORD PER ZON
 ------------------------------------------------------------------- */
-let baseWordsTop  = ["Primär", "Huvudroll", "Övergripande", "Sammanhang"];
-let baseWordsLeft = ["Fördjupning", "Kort", "Kontext", "Detalj", "Fakta"];
-let baseWordsRight = ["Akut", "Större", "Mindre", "Kritisk", "Avvikelse"];
+let baseWordsTop  = ["Till ALLA", "Erbjuda helhetsbilden - både nu och framåt", "Förklara och fördjupa", "Erbjuda helhetsbilden för att agera nu", "Kort och tydlig information", "Personaliserat beslutsstöd", "Att agera på omedelbart"];
+let baseWordsLeft = ["Fördjupning", "Omedelbar status", "Kort och koncist", "Bakgrund och orsaker" "Mycket kort text", "Detalj", "FAQ", "Fakta"];
+let baseWordsRight = ["Allmän info", "Om många resenärer påverkas","Större störningar", "Akuta lägen", "Mindre ändringar", "Pressinformation", "Alla avvikelser","Före resan", "Under resan" "Efter resan"];
 
 /* Globala ord som användaren lagt till */
 let globalAddedWords = JSON.parse(localStorage.getItem("globalAddedWords") || "[]");
