@@ -578,7 +578,7 @@ async function exportAllPDF() {
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
         const imgWidth = pageWidth * 0.92;
-        const imgHeight
+       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
 </script>
 </html>
